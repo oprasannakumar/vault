@@ -47,7 +47,7 @@
       background: #0056b3;
     }
 
-    /* ---------- Denominations Grid ---------- */
+    /* Denomination Grid */
     #denominations {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -63,9 +63,6 @@
       margin: 0;
       font-weight: bold;
     }
-    .denom-row input {
-      width: 100%;
-    }
   </style>
 </head>
 
@@ -78,12 +75,7 @@
   <input type="date" id="date" required>
 
   <label>Narration</label>
-  <textarea
-    id="narration"
-    rows="2"
-    placeholder="Eg: Transfer from Axis to Cash"
-    required
-  ></textarea>
+  <textarea id="narration" rows="2" required></textarea>
 
   <hr>
 
@@ -119,16 +111,15 @@
 
   <hr>
 
-  <!-- Cash Denominations -->
   <div id="denominationsBox" style="display:none;">
     <h3>Cash Denominations</h3>
     <div id="denominations"></div>
-    <small>Use negative numbers to reduce cash</small>
+    <small>Negative values reduce cash</small>
     <hr>
   </div>
 
   <label>Amount</label>
-  <input type="number" id="amount" required readonly>
+  <input type="number" id="amount" readonly required>
 
   <button type="submit">Transfer</button>
 </form>
@@ -149,7 +140,7 @@
     "SBI BPCL", "Standard Chartered"
   ];
 
-  const denominations = [500, 200, 100, 50, 20, 10, 5, 2, 1];
+  const denominations = [500,200,100,50,20,10,5,2,1];
 
   function setupDropdown(trTypeId, accountId, labelId) {
     const trType = document.getElementById(trTypeId);
@@ -162,29 +153,20 @@
       if (trType.value === "cash") {
         account.style.display = "none";
         label.style.display = "none";
-        account.required = false;
         toggleDenominations();
         return;
       }
 
       account.style.display = "block";
       label.style.display = "block";
-      account.required = true;
 
       let options = [];
-      if (["upi", "net", "debit"].includes(trType.value)) options = bankAccounts;
+      if (["upi","net","debit"].includes(trType.value)) options = bankAccounts;
       if (trType.value === "credit") options = creditCards;
 
-      const def = document.createElement("option");
-      def.value = "";
-      def.text = "Select";
-      account.appendChild(def);
-
+      account.innerHTML = `<option value="">Select</option>`;
       options.forEach(v => {
-        const opt = document.createElement("option");
-        opt.value = v;
-        opt.text = v;
-        account.appendChild(opt);
+        account.innerHTML += `<option value="${v}">${v}</option>`;
       });
 
       toggleDenominations();
@@ -209,32 +191,26 @@
   function createDenominations() {
     const container = document.getElementById("denominations");
     container.innerHTML = "";
-
     denominations.forEach(d => {
-      const row = document.createElement("div");
-      row.className = "denom-row";
-      row.innerHTML = `
-        <label>${d}</label>
-        <input type="number" value="0" data-denom="${d}">
+      container.innerHTML += `
+        <div class="denom-row">
+          <label>${d}</label>
+          <input type="number" value="0" data-denom="${d}">
+        </div>
       `;
-      container.appendChild(row);
     });
   }
 
   function calculateCashTotal() {
     let total = 0;
-    document.querySelectorAll("#denominations input").forEach(input => {
-      const denom = Number(input.dataset.denom);
-      const count = Number(input.value) || 0;
-      total += denom * count;
+    document.querySelectorAll("#denominations input").forEach(i => {
+      total += (Number(i.dataset.denom) * (Number(i.value) || 0));
     });
     document.getElementById("amount").value = total;
   }
 
   document.addEventListener("input", e => {
-    if (e.target.closest("#denominations")) {
-      calculateCashTotal();
-    }
+    if (e.target.closest("#denominations")) calculateCashTotal();
   });
 
   setupDropdown("from_trtype", "from_account", "fromLabel");
@@ -243,43 +219,38 @@
   document.getElementById("transferForm").addEventListener("submit", async e => {
     e.preventDefault();
 
+    /* 🔥 CAPTURE DENOMINATION COUNTS */
+    const cashDenoms = {};
+    document.querySelectorAll("#denominations input").forEach(i => {
+      cashDenoms[i.dataset.denom] = Number(i.value) || 0;
+    });
+
     const data = {
       category: "self_transfer",
-      date: document.getElementById("date").value,
-      narration: document.getElementById("narration").value,
+      date: date.value,
+      narration: narration.value,
       from: {
-        trtype: document.getElementById("from_trtype").value,
-        account:
-          document.getElementById("from_trtype").value === "cash"
-            ? "Cash"
-            : document.getElementById("from_account").value
+        trtype: from_trtype.value,
+        account: from_trtype.value === "cash" ? "Cash" : from_account.value
       },
       to: {
-        trtype: document.getElementById("to_trtype").value,
-        account:
-          document.getElementById("to_trtype").value === "cash"
-            ? "Cash"
-            : document.getElementById("to_account").value
+        trtype: to_trtype.value,
+        account: to_trtype.value === "cash" ? "Cash" : to_account.value
       },
-      amount: document.getElementById("amount").value
+      amount: amount.value,
+      cash_denominations: cashDenoms   // ✅ NEW
     };
 
-    try {
-      await fetch("https://hook.eu1.make.com/3pqalalbd6c1f1hf1guweokfv8eotdgw", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
+    await fetch("https://hook.eu1.make.com/uayw6m2h1u56gz1fuhnyewvh860q8tjy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
 
-      alert("✅ Transfer recorded");
-      document.getElementById("transferForm").reset();
-      document.getElementById("denominationsBox").style.display = "none";
-      document.getElementById("denominations").innerHTML = "";
-
-    } catch (err) {
-      alert("❌ Error submitting transfer");
-      console.error(err);
-    }
+    alert("✅ Transfer recorded");
+    transferForm.reset();
+    denominationsBox.style.display = "none";
+    denominations.innerHTML = "";
   });
 </script>
 
