@@ -80,4 +80,122 @@
 
   <label>Transaction Type</label>
   <select id="to_trtype" required>
-    <opti
+    <option value="">Select</option>
+    <option value="cash">Cash</option>
+    <option value="upi">UPI</option>
+    <option value="net">Net Banking</option>
+    <option value="debit">Debit</option>
+    <option value="credit">Credit</option>
+  </select>
+
+  <label id="toLabel" style="display:none;">To Account</label>
+  <select id="to_account" style="display:none;"></select>
+
+  <hr>
+
+  <!-- Amount -->
+  <label>Amount</label>
+  <input type="number" id="amount" required>
+
+  <button type="submit">Transfer</button>
+</form>
+
+<script>
+  const bankAccounts = [
+    "Axis", "HDFC Old", "HDFC New", "ICICI",
+    "IndusInd", "Kotak", "RBL", "SBI"
+  ];
+
+  const creditCards = [
+    "Axis Flipkart", "Axis MyZone", "Axis Neo",
+    "HDFC Millennia", "ICICI Amazon",
+    "Indusind Legend", "SBI BPCL"
+  ];
+
+  function setupDropdown(trTypeId, accountId, labelId) {
+    const trType = document.getElementById(trTypeId);
+    const account = document.getElementById(accountId);
+    const label = document.getElementById(labelId);
+
+    trType.addEventListener("change", () => {
+      account.innerHTML = "";
+
+      if (trType.value === "cash") {
+        account.style.display = "none";
+        label.style.display = "none";
+        account.required = false;
+        return;
+      }
+
+      account.style.display = "block";
+      label.style.display = "block";
+      account.required = true;
+
+      let options = [];
+      if (["upi", "net", "debit"].includes(trType.value)) options = bankAccounts;
+      if (trType.value === "credit") options = creditCards;
+
+      const def = document.createElement("option");
+      def.value = "";
+      def.text = "Select";
+      account.appendChild(def);
+
+      options.forEach(v => {
+        const opt = document.createElement("option");
+        opt.value = v;
+        opt.text = v;
+        account.appendChild(opt);
+      });
+    });
+  }
+
+  setupDropdown("from_trtype", "from_account", "fromLabel");
+  setupDropdown("to_trtype", "to_account", "toLabel");
+
+  document.getElementById("transferForm").addEventListener("submit", async e => {
+    e.preventDefault();
+
+    const data = {
+      date: document.getElementById("date").value,
+      from: {
+        trtype: document.getElementById("from_trtype").value,
+        account:
+          document.getElementById("from_trtype").value === "cash"
+            ? "Cash"
+            : document.getElementById("from_account").value
+      },
+      to: {
+        trtype: document.getElementById("to_trtype").value,
+        account:
+          document.getElementById("to_trtype").value === "cash"
+            ? "Cash"
+            : document.getElementById("to_account").value
+      },
+      amount: document.getElementById("amount").value
+    };
+
+    console.log("Submitting:", data);
+
+    try {
+      await fetch("https://hook.eu1.make.com/uayw6m2h1u56gz1fuhnyewvh860q8tjy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      alert("✅ Transfer recorded");
+      document.getElementById("transferForm").reset();
+      document.getElementById("from_account").style.display = "none";
+      document.getElementById("to_account").style.display = "none";
+      document.getElementById("fromLabel").style.display = "none";
+      document.getElementById("toLabel").style.display = "none";
+
+    } catch (err) {
+      alert("❌ Error");
+      console.error(err);
+    }
+  });
+</script>
+
+</body>
+</html>
