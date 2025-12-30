@@ -47,7 +47,7 @@
       background: #0056b3;
     }
 
-    /* Denomination Grid */
+    /* Denominations Grid */
     #denominations {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -111,10 +111,11 @@
 
   <hr>
 
+  <!-- Cash Denominations -->
   <div id="denominationsBox" style="display:none;">
     <h3>Cash Denominations</h3>
     <div id="denominations"></div>
-    <small>Negative values reduce cash</small>
+    <small>Use negative values to reduce cash</small>
     <hr>
   </div>
 
@@ -125,6 +126,8 @@
 </form>
 
 <script>
+  /* ================== DATA ================== */
+
   const bankAccounts = [
     "Axis", "HDFC Old", "HDFC New", "ICICI",
     "IndusInd", "Kotak", "RBL", "SBI"
@@ -140,7 +143,9 @@
     "SBI BPCL", "Standard Chartered"
   ];
 
-  const denominations = [500,200,100,50,20,10,5,2,1];
+  const denominations = [500, 200, 100, 50, 20, 10, 5, 2, 1];
+
+  /* ================== DROPDOWNS ================== */
 
   function setupDropdown(trTypeId, accountId, labelId) {
     const trType = document.getElementById(trTypeId);
@@ -161,7 +166,7 @@
       label.style.display = "block";
 
       let options = [];
-      if (["upi","net","debit"].includes(trType.value)) options = bankAccounts;
+      if (["upi", "net", "debit"].includes(trType.value)) options = bankAccounts;
       if (trType.value === "credit") options = creditCards;
 
       account.innerHTML = `<option value="">Select</option>`;
@@ -172,6 +177,11 @@
       toggleDenominations();
     });
   }
+
+  setupDropdown("from_trtype", "from_account", "fromLabel");
+  setupDropdown("to_trtype", "to_account", "toLabel");
+
+  /* ================== DENOMINATIONS ================== */
 
   function toggleDenominations() {
     const fromType = document.getElementById("from_trtype").value;
@@ -191,6 +201,7 @@
   function createDenominations() {
     const container = document.getElementById("denominations");
     container.innerHTML = "";
+
     denominations.forEach(d => {
       container.innerHTML += `
         <div class="denom-row">
@@ -204,22 +215,22 @@
   function calculateCashTotal() {
     let total = 0;
     document.querySelectorAll("#denominations input").forEach(i => {
-      total += (Number(i.dataset.denom) * (Number(i.value) || 0));
+      total += Number(i.dataset.denom) * (Number(i.value) || 0);
     });
     document.getElementById("amount").value = total;
   }
 
   document.addEventListener("input", e => {
-    if (e.target.closest("#denominations")) calculateCashTotal();
+    if (e.target.closest("#denominations")) {
+      calculateCashTotal();
+    }
   });
 
-  setupDropdown("from_trtype", "from_account", "fromLabel");
-  setupDropdown("to_trtype", "to_account", "toLabel");
+  /* ================== SUBMIT ================== */
 
   document.getElementById("transferForm").addEventListener("submit", async e => {
     e.preventDefault();
 
-    /* 🔥 CAPTURE DENOMINATION COUNTS */
     const cashDenoms = {};
     document.querySelectorAll("#denominations input").forEach(i => {
       cashDenoms[i.dataset.denom] = Number(i.value) || 0;
@@ -227,19 +238,27 @@
 
     const data = {
       category: "self_transfer",
-      date: date.value,
-      narration: narration.value,
+      date: document.getElementById("date").value,
+      narration: document.getElementById("narration").value,
       from: {
-        trtype: from_trtype.value,
-        account: from_trtype.value === "cash" ? "Cash" : from_account.value
+        trtype: document.getElementById("from_trtype").value,
+        account:
+          document.getElementById("from_trtype").value === "cash"
+            ? "Cash"
+            : document.getElementById("from_account").value
       },
       to: {
-        trtype: to_trtype.value,
-        account: to_trtype.value === "cash" ? "Cash" : to_account.value
+        trtype: document.getElementById("to_trtype").value,
+        account:
+          document.getElementById("to_trtype").value === "cash"
+            ? "Cash"
+            : document.getElementById("to_account").value
       },
-      amount: amount.value,
-      cash_denominations: cashDenoms   // ✅ NEW
+      amount: document.getElementById("amount").value,
+      cash_denominations: cashDenoms
     };
+
+    console.log("Webhook Payload:", data);
 
     await fetch("https://hook.eu1.make.com/3pqalalbd6c1f1hf1guweokfv8eotdgw", {
       method: "POST",
@@ -248,12 +267,12 @@
     });
 
     alert("✅ Transfer recorded");
-    transferForm.reset();
-    denominationsBox.style.display = "none";
-    denominations.innerHTML = "";
+
+    document.getElementById("transferForm").reset();
+    document.getElementById("denominationsBox").style.display = "none";
+    document.getElementById("denominations").innerHTML = "";
   });
 </script>
 
 </body>
 </html>
-
