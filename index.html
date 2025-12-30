@@ -277,9 +277,9 @@ document.getElementById("transferForm").addEventListener("submit", async e => {
     cash_denominations: cashDenoms
   };
 
-  console.log("https://hook.eu1.make.com/uayw6m2h1u56gz1fuhnyewvh860q8tjy", data);
+  console.log("Webhook Payload:", data);
 
-  await fetch("YOUR_MAKE_WEBHOOK_URL", {
+  await fetch("https://hook.eu1.make.com/uayw6m2h1u56gz1fuhnyewvh860q8tjy", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
