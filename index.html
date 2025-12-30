@@ -46,6 +46,26 @@
     button:hover {
       background: #0056b3;
     }
+
+    /* ---------- Denominations Grid ---------- */
+    #denominations {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px 12px;
+    }
+    .denom-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .denom-row label {
+      width: 45px;
+      margin: 0;
+      font-weight: bold;
+    }
+    .denom-row input {
+      width: 100%;
+    }
   </style>
 </head>
 
@@ -54,11 +74,9 @@
 <form id="transferForm">
   <h2>Self Transfer</h2>
 
-  <!-- Date -->
   <label>Date</label>
   <input type="date" id="date" required>
 
-  <!-- Narration -->
   <label>Narration</label>
   <textarea
     id="narration"
@@ -69,9 +87,7 @@
 
   <hr>
 
-  <!-- FROM -->
   <h3>From</h3>
-
   <label>Transaction Type</label>
   <select id="from_trtype" required>
     <option value="">Select</option>
@@ -87,9 +103,7 @@
 
   <hr>
 
-  <!-- TO -->
   <h3>To</h3>
-
   <label>Transaction Type</label>
   <select id="to_trtype" required>
     <option value="">Select</option>
@@ -105,9 +119,16 @@
 
   <hr>
 
-  <!-- Amount -->
+  <!-- Cash Denominations -->
+  <div id="denominationsBox" style="display:none;">
+    <h3>Cash Denominations</h3>
+    <div id="denominations"></div>
+    <small>Use negative numbers to reduce cash</small>
+    <hr>
+  </div>
+
   <label>Amount</label>
-  <input type="number" id="amount" required>
+  <input type="number" id="amount" required readonly>
 
   <button type="submit">Transfer</button>
 </form>
@@ -125,7 +146,10 @@
     "ICICI Amazon", "ICICI Coral", "ICICI Expressions",
     "Indusind Plat Aura EDGE", "Indusind Legend",
     "Yes Finbooster", "Kotak League", "Kotak Image",
-    "SBI BPCL", "Standard Chartered"  ];
+    "SBI BPCL", "Standard Chartered"
+  ];
+
+  const denominations = [500, 200, 100, 50, 20, 10, 5, 2, 1];
 
   function setupDropdown(trTypeId, accountId, labelId) {
     const trType = document.getElementById(trTypeId);
@@ -139,6 +163,7 @@
         account.style.display = "none";
         label.style.display = "none";
         account.required = false;
+        toggleDenominations();
         return;
       }
 
@@ -161,8 +186,56 @@
         opt.text = v;
         account.appendChild(opt);
       });
+
+      toggleDenominations();
     });
   }
+
+  function toggleDenominations() {
+    const fromType = document.getElementById("from_trtype").value;
+    const toType = document.getElementById("to_trtype").value;
+    const box = document.getElementById("denominationsBox");
+
+    if (fromType === "cash" || toType === "cash") {
+      box.style.display = "block";
+      createDenominations();
+    } else {
+      box.style.display = "none";
+      document.getElementById("denominations").innerHTML = "";
+      document.getElementById("amount").value = "";
+    }
+  }
+
+  function createDenominations() {
+    const container = document.getElementById("denominations");
+    container.innerHTML = "";
+
+    denominations.forEach(d => {
+      const row = document.createElement("div");
+      row.className = "denom-row";
+      row.innerHTML = `
+        <label>${d}</label>
+        <input type="number" value="0" data-denom="${d}">
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  function calculateCashTotal() {
+    let total = 0;
+    document.querySelectorAll("#denominations input").forEach(input => {
+      const denom = Number(input.dataset.denom);
+      const count = Number(input.value) || 0;
+      total += denom * count;
+    });
+    document.getElementById("amount").value = total;
+  }
+
+  document.addEventListener("input", e => {
+    if (e.target.closest("#denominations")) {
+      calculateCashTotal();
+    }
+  });
 
   setupDropdown("from_trtype", "from_account", "fromLabel");
   setupDropdown("to_trtype", "to_account", "toLabel");
@@ -171,7 +244,7 @@
     e.preventDefault();
 
     const data = {
-       category: "self_transfer",
+      category: "self_transfer",
       date: document.getElementById("date").value,
       narration: document.getElementById("narration").value,
       from: {
@@ -191,10 +264,8 @@
       amount: document.getElementById("amount").value
     };
 
-    console.log("Submitting:", data);
-
     try {
-      await fetch("https://hook.eu1.make.com/uayw6m2h1u56gz1fuhnyewvh860q8tjy", {
+      await fetch("https://hook.eu1.make.com/3pqalalbd6c1f1hf1guweokfv8eotdgw", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
@@ -202,10 +273,8 @@
 
       alert("✅ Transfer recorded");
       document.getElementById("transferForm").reset();
-      document.getElementById("from_account").style.display = "none";
-      document.getElementById("to_account").style.display = "none";
-      document.getElementById("fromLabel").style.display = "none";
-      document.getElementById("toLabel").style.display = "none";
+      document.getElementById("denominationsBox").style.display = "none";
+      document.getElementById("denominations").innerHTML = "";
 
     } catch (err) {
       alert("❌ Error submitting transfer");
@@ -216,8 +285,3 @@
 
 </body>
 </html>
-
-
-
-
-
