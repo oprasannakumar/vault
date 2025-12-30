@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Self Transfer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 420px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    label {
+      font-weight: bold;
+      margin-top: 10px;
+      display: block;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+    }
+    hr {
+      margin: 15px 0;
+    }
+    button {
+      margin-top: 15px;
+      background: #007bff;
+      color: white;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+
+<body>
+
+<form id="transferForm">
+  <h2>Self Transfer</h2>
+
+  <!-- Date -->
+  <label>Date</label>
+  <input type="date" id="date" required>
+
+  <hr>
+
+  <!-- FROM -->
+  <h3>From</h3>
+
+  <label>Transaction Type</label>
+  <select id="from_trtype" required>
+    <option value="">Select</option>
+    <option value="cash">Cash</option>
+    <option value="upi">UPI</option>
+    <option value="net">Net Banking</option>
+    <option value="debit">Debit</option>
+    <option value="credit">Credit</option>
+  </select>
+
+  <label id="fromLabel" style="display:none;">From Account</label>
+  <select id="from_account" style="display:none;"></select>
+
+  <hr>
+
+  <!-- TO -->
+  <h3>To</h3>
+
+  <label>Transaction Type</label>
+  <select id="to_trtype" required>
+    <opti
