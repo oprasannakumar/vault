@@ -79,6 +79,7 @@
 
   <hr>
 
+  <!-- FROM -->
   <h3>From</h3>
   <label>Transaction Type</label>
   <select id="from_trtype" required>
@@ -95,6 +96,7 @@
 
   <hr>
 
+  <!-- TO -->
   <h3>To</h3>
   <label>Transaction Type</label>
   <select id="to_trtype" required>
@@ -115,7 +117,7 @@
   <div id="denominationsBox" style="display:none;">
     <h3>Cash Denominations</h3>
     <div id="denominations"></div>
-    <small id="cashHint"></small>
+    <small>Enter positive or negative counts</small>
     <hr>
   </div>
 
@@ -188,20 +190,17 @@ function toggleCashUI() {
   const toCash = document.getElementById("to_trtype").value === "cash";
   const box = document.getElementById("denominationsBox");
   const amount = document.getElementById("amount");
-  const hint = document.getElementById("cashHint");
 
   if (fromCash || toCash) {
     box.style.display = "block";
     createDenominations();
     amount.readOnly = true;
-
-    hint.textContent = fromCash
-      ? "FROM Cash → amount will be NEGATIVE (cash out)"
-      : "TO Cash → amount will be POSITIVE (cash in)";
+    amount.value = "";
   } else {
     box.style.display = "none";
     document.getElementById("denominations").innerHTML = "";
     amount.readOnly = false;
+    amount.value = "";
   }
 }
 
@@ -220,16 +219,13 @@ function createDenominations() {
 }
 
 function calculateCashAmount() {
-  const fromCash = document.getElementById("from_trtype").value === "cash";
-  const sign = fromCash ? -1 : 1;
-
   let total = 0;
+
   document.querySelectorAll("#denominations input").forEach(i => {
-    const count = Math.abs(Number(i.value) || 0); // 🔥 normalize sign
-    total += Number(i.dataset.denom) * count;
+    total += Number(i.dataset.denom) * (Number(i.value) || 0);
   });
 
-  document.getElementById("amount").value = total * sign;
+  document.getElementById("amount").value = total;
 }
 
 document.addEventListener("input", e => {
@@ -243,12 +239,9 @@ document.addEventListener("input", e => {
 document.getElementById("transferForm").addEventListener("submit", async e => {
   e.preventDefault();
 
-  const fromCash = document.getElementById("from_trtype").value === "cash";
-
   const cashDenoms = {};
   document.querySelectorAll("#denominations input").forEach(i => {
-    const cleanCount = Math.abs(Number(i.value) || 0);
-    cashDenoms[i.dataset.denom] = fromCash ? -cleanCount : cleanCount;
+    cashDenoms[i.dataset.denom] = Number(i.value) || 0;
   });
 
   const dateValue = document.getElementById("date").value;
@@ -273,7 +266,7 @@ document.getElementById("transferForm").addEventListener("submit", async e => {
           ? "Cash"
           : document.getElementById("to_account").value
     },
-    amount: document.getElementById("amount").value,
+    amount: Number(document.getElementById("amount").value),
     cash_denominations: cashDenoms
   };
 
