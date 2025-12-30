@@ -12,10 +12,10 @@
       padding: 20px;
     }
     form {
-      background: #fff;
+      background: #ffffff;
       padding: 20px;
       border-radius: 8px;
-      max-width: 420px;
+      max-width: 430px;
       margin: auto;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
@@ -24,10 +24,13 @@
       margin-top: 10px;
       display: block;
     }
-    input, select, button {
+    input, select, textarea, button {
       width: 100%;
       padding: 8px;
       margin-top: 5px;
+    }
+    textarea {
+      resize: vertical;
     }
     hr {
       margin: 15px 0;
@@ -57,7 +60,12 @@
 
   <!-- Narration -->
   <label>Narration</label>
-  <input type="text" id="narration" placeholder="Description" required>
+  <textarea
+    id="narration"
+    rows="2"
+    placeholder="Eg: Transfer from Axis to Cash"
+    required
+  ></textarea>
 
   <hr>
 
@@ -117,7 +125,6 @@
   ];
 
   function setupDropdown(trTypeId, accountId, labelId) {
-    const  narration: document.getElementById("narration").valuue;
     const trType = document.getElementById(trTypeId);
     const account = document.getElementById(accountId);
     const label = document.getElementById(labelId);
@@ -162,6 +169,7 @@
 
     const data = {
       date: document.getElementById("date").value,
+      narration: document.getElementById("narration").value,
       from: {
         trtype: document.getElementById("from_trtype").value,
         account:
@@ -182,7 +190,7 @@
     console.log("Submitting:", data);
 
     try {
-      await fetch("https://hook.eu1.make.com/v7ffxo6nse2qjsua3rpsk47dq8fdnxci", {
+      await fetch("https://hook.eu1.make.com/uayw6m2h1u56gz1fuhnyewvh860q8tjy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data)
@@ -196,7 +204,7 @@
       document.getElementById("toLabel").style.display = "none";
 
     } catch (err) {
-      alert("❌ Error");
+      alert("❌ Error submitting transfer");
       console.error(err);
     }
   });
@@ -204,6 +212,3 @@
 
 </body>
 </html>
-
-
-
