@@ -27,6 +27,7 @@
     display: block;
   }
 
+  /* Uniform size */
   input,
   select,
   textarea,
@@ -39,14 +40,25 @@
     font-size: 14px;
     border-radius: 4px;
     border: 1px solid #ccc;
+    background-color: #ffffff;
+    color: #000;
   }
 
   textarea {
     resize: none;
+    line-height: 24px;
   }
 
-  input:read-only {
-    background-color: #f0f0f0;
+  /* 🔥 ONLY CASH AMOUNT GREY */
+  .cash-grey {
+    background-color: #f0f0f0 !important;
+    color: #000;
+  }
+
+  /* Disabled selects still white */
+  select:disabled {
+    background-color: #ffffff !important;
+    opacity: 1;
   }
 
   hr {
@@ -86,7 +98,7 @@
   }
 
   .denom-row input {
-    height: 38px;
+    height: 42px;
   }
 </style>
 </head>
@@ -109,10 +121,10 @@
 <select id="from_trtype" required>
   <option value="">Select</option>
   <option value="cash">Cash</option>
-  <option value="upi">UPI</option>
-  <option value="net">Net Banking</option>
-  <option value="debit">Debit</option>
-  <option value="credit">Credit</option>
+  <option value="UPI">UPI</option>
+  <option value="NET">Net Banking</option>
+  <option value="DEBIT">Debit</option>
+  <option value="CREDIT">Credit</option>
 </select>
 
 <label id="fromLabel" style="display:none;">From Account</label>
@@ -124,7 +136,7 @@
 <label>Transaction Type</label>
 <select id="to_trtype" required>
   <option value="">Select</option>
-  <option value="CASH">Cash</option>
+  <option value="cash">Cash</option>
   <option value="UPI">UPI</option>
   <option value="NET">Net Banking</option>
   <option value="DEBIT">Debit</option>
@@ -150,7 +162,6 @@
 </form>
 
 <script>
-/* ================= DATA ================= */
 const bankAccounts = ["FI","HDFC Old","HDFC New","ICICI","IndusInd","Kotak","RBL","SBI"];
 const creditCards = [
   "Axis Flipkart","Axis MyZone","Axis Neo",
@@ -165,17 +176,17 @@ const denominations = [500,200,100,50,20,10,5,2,1];
 
 const fromTr = document.getElementById("from_trtype");
 const toTr = document.getElementById("to_trtype");
+const amountInput = document.getElementById("amount");
 
-/* ================= MUTUAL EXCLUSION (FIXED) ================= */
-fromTr.addEventListener("change", () => {
+fromTr.addEventListener("change", handleAll);
+toTr.addEventListener("change", handleAll);
+
+function handleAll() {
   disableSameOption(fromTr, toTr);
-  handleAccounts();
-});
-
-toTr.addEventListener("change", () => {
   disableSameOption(toTr, fromTr);
   handleAccounts();
-});
+  toggleCashUI();
+}
 
 function disableSameOption(source, target) {
   const val = source.value;
@@ -184,11 +195,9 @@ function disableSameOption(source, target) {
   });
 }
 
-/* ================= ACCOUNT LOGIC ================= */
 function handleAccounts() {
   setupAccount(fromTr, "from_account", "fromLabel");
   setupAccount(toTr, "to_account", "toLabel");
-  toggleCashUI();
 }
 
 function setupAccount(tr, accId, labelId) {
@@ -213,23 +222,23 @@ function setupAccount(tr, accId, labelId) {
   options.forEach(o => acc.innerHTML += `<option>${o}</option>`);
 }
 
-/* ================= CASH LOGIC ================= */
 function toggleCashUI() {
   const fromCash = fromTr.value === "cash";
   const toCash = toTr.value === "cash";
   const box = document.getElementById("denominationsBox");
-  const amount = document.getElementById("amount");
 
   if (fromCash || toCash) {
     box.style.display = "block";
     createDenominations();
-    amount.readOnly = true;
-    amount.value = "";
+    amountInput.readOnly = true;
+    amountInput.classList.add("cash-grey");
+    amountInput.value = "";
   } else {
     box.style.display = "none";
     document.getElementById("denominations").innerHTML = "";
-    amount.readOnly = false;
-    amount.value = "";
+    amountInput.readOnly = false;
+    amountInput.classList.remove("cash-grey");
+    amountInput.value = "";
   }
 }
 
@@ -252,11 +261,10 @@ document.addEventListener("input", e => {
     document.querySelectorAll("#denominations input").forEach(i => {
       total += Number(i.dataset.denom) * (Number(i.value) || 0);
     });
-    document.getElementById("amount").value = total;
+    amountInput.value = total;
   }
 });
 
-/* ================= SUBMIT ================= */
 document.getElementById("transferForm").addEventListener("submit", async e => {
   e.preventDefault();
 
@@ -265,21 +273,19 @@ document.getElementById("transferForm").addEventListener("submit", async e => {
     cashDenoms[i.dataset.denom] = Number(i.value) || 0;
   });
 
-  const dateValue = document.getElementById("date").value;
-
   const data = {
     category: "self_transfer",
-    date: dateValue,
-    narration: document.getElementById("narration").value,
+    date: date.value,
+    narration: narration.value,
     from: {
       trtype: fromTr.value,
-      account: fromTr.value === "cash" ? "Cash" : document.getElementById("from_account").value
+      account: fromTr.value === "cash" ? "Cash" : from_account.value
     },
     to: {
       trtype: toTr.value,
-      account: toTr.value === "cash" ? "Cash" : document.getElementById("to_account").value
+      account: toTr.value === "cash" ? "Cash" : to_account.value
     },
-    amount: Number(document.getElementById("amount").value),
+    amount: Number(amountInput.value),
     cash_denominations: cashDenoms
   };
 
@@ -292,12 +298,10 @@ document.getElementById("transferForm").addEventListener("submit", async e => {
   alert("Transfer recorded successfully");
   transferForm.reset();
   document.getElementById("denominationsBox").style.display = "none";
-  document.getElementById("amount").readOnly = false;
+  amountInput.readOnly = false;
+  amountInput.classList.remove("cash-grey");
 });
 </script>
 
 </body>
 </html>
-
-
-
