@@ -12,7 +12,6 @@
     padding: 20px;
   }
 
-  /* ===== FORM ===== */
   form {
     position: relative;
     background: #ffffff;
@@ -23,12 +22,12 @@
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
   }
 
-  /* ===== 3 DOT MENU ===== */
+  /* ===== MENU ===== */
   .menu-container {
     position: absolute;
     top: 12px;
     left: 12px;
-    padding: 8px; /* hover buffer */
+    padding: 8px;
     z-index: 10;
   }
 
@@ -54,7 +53,6 @@
     border-radius: 6px;
     min-width: 230px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-    overflow: hidden;
   }
 
   .menu-container:hover .menu-dropdown,
@@ -85,7 +83,6 @@
     display: block;
   }
 
-  /* ===== UNIFORM INPUT SIZE ===== */
   input,
   select,
   textarea,
@@ -104,7 +101,6 @@
     resize: none;
   }
 
-  /* CASH AMOUNT GREY */
   .cash-grey {
     background-color: #f0f0f0 !important;
   }
@@ -149,19 +145,13 @@
 
 <form id="transferForm">
 
-  <!-- ===== MENU ===== -->
+  <!-- MENU -->
   <div class="menu-container">
     <div class="menu-btn">⋮</div>
     <div class="menu-dropdown">
-      <a href="https://oprasannakumar.github.io/Financial-Transaction/" target="_blank">
-        Financial Entries
-      </a>
-      <a href="https://oprasannakumar.github.io/Monthlyexpences/" target="_blank">
-        Monthly Expenses
-      </a>
-      <a href="https://oprasannakumar.github.io/LoanTransfer/" target="_blank">
-        Loan Entries
-      </a>
+      <a href="https://oprasannakumar.github.io/Financial-Transaction/" target="_blank">Financial Entries</a>
+      <a href="https://oprasannakumar.github.io/Monthlyexpences/" target="_blank">Monthly Expenses</a>
+      <a href="https://oprasannakumar.github.io/LoanTransfer/" target="_blank">Loan Entries</a>
     </div>
   </div>
 
@@ -240,15 +230,30 @@ denominations.forEach(d => {
     </div>`;
 });
 
+/* EVENTS */
 fromTr.addEventListener("change", handleAll);
 toTr.addEventListener("change", handleAll);
 
+/* CORE HANDLER */
 function handleAll() {
+  disableSameOption(fromTr, toTr);
+  disableSameOption(toTr, fromTr);
   setupAccount(fromTr, "from_account", "fromLabel");
   setupAccount(toTr, "to_account", "toLabel");
   toggleCashUI();
 }
 
+/* 🔥 MUTUAL DISABLE */
+function disableSameOption(source, target) {
+  [...target.options].forEach(opt => opt.disabled = false);
+  if (source.value) {
+    [...target.options].forEach(opt => {
+      if (opt.value === source.value) opt.disabled = true;
+    });
+  }
+}
+
+/* ACCOUNT LOGIC */
 function setupAccount(tr, accId, labelId) {
   const acc = document.getElementById(accId);
   const label = document.getElementById(labelId);
@@ -263,11 +268,12 @@ function setupAccount(tr, accId, labelId) {
   acc.style.display = "block";
   label.style.display = "block";
 
-  const options = ["UPI","NET","DEBIT"].includes(tr.value) ? bankAccounts : creditCards;
+  const opts = ["UPI","NET","DEBIT"].includes(tr.value) ? bankAccounts : creditCards;
   acc.innerHTML = `<option value="">Select</option>`;
-  options.forEach(o => acc.innerHTML += `<option>${o}</option>`);
+  opts.forEach(o => acc.innerHTML += `<option>${o}</option>`);
 }
 
+/* CASH UI */
 function toggleCashUI() {
   if (fromTr.value === "cash" || toTr.value === "cash") {
     denomBox.style.display = "block";
@@ -291,7 +297,7 @@ document.addEventListener("input", e => {
   }
 });
 
-/* SUBMIT + WEBHOOK */
+/* SUBMIT */
 document.getElementById("transferForm").addEventListener("submit", async e => {
   e.preventDefault();
 
