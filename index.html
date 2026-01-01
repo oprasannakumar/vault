@@ -124,11 +124,11 @@
 <label>Transaction Type</label>
 <select id="to_trtype" required>
   <option value="">Select</option>
-  <option value="cash">Cash</option>
-  <option value="upi">UPI</option>
-  <option value="net">Net Banking</option>
-  <option value="debit">Debit</option>
-  <option value="credit">Credit</option>
+  <option value="CASH">Cash</option>
+  <option value="UPI">UPI</option>
+  <option value="NET">Net Banking</option>
+  <option value="DEBIT">Debit</option>
+  <option value="CREDIT">Credit</option>
 </select>
 
 <label id="toLabel" style="display:none;">To Account</label>
@@ -206,8 +206,8 @@ function setupAccount(tr, accId, labelId) {
   label.style.display = "block";
 
   let options = [];
-  if (["upi","net","debit"].includes(tr.value)) options = bankAccounts;
-  if (tr.value === "credit") options = creditCards;
+  if (["UPI","NET","DEBIT"].includes(tr.value)) options = bankAccounts;
+  if (tr.value === "CREDIT") options = creditCards;
 
   acc.innerHTML = `<option value="">Select</option>`;
   options.forEach(o => acc.innerHTML += `<option>${o}</option>`);
@@ -298,5 +298,6 @@ document.getElementById("transferForm").addEventListener("submit", async e => {
 
 </body>
 </html>
+
 
 
