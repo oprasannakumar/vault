@@ -22,7 +22,7 @@
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
   }
 
-  /* ===== MENU ===== */
+  /* MENU */
   .menu-container {
     position: absolute;
     top: 12px;
@@ -69,13 +69,8 @@
     font-size: 14px;
   }
 
-  .menu-dropdown a:last-child {
-    border-bottom: none;
-  }
-
-  .menu-dropdown a:hover {
-    background: #f0f0f0;
-  }
+  .menu-dropdown a:last-child { border-bottom: none; }
+  .menu-dropdown a:hover { background: #f0f0f0; }
 
   label {
     font-weight: bold;
@@ -97,17 +92,13 @@
     background: #ffffff;
   }
 
-  textarea {
-    resize: none;
-  }
+  textarea { resize: none; }
 
   .cash-grey {
     background-color: #f0f0f0 !important;
   }
 
-  hr {
-    margin: 15px 0;
-  }
+  hr { margin: 15px 0; }
 
   button {
     height: 44px;
@@ -118,9 +109,7 @@
     cursor: pointer;
   }
 
-  button:hover {
-    background: #0056b3;
-  }
+  button:hover { background: #0056b3; }
 
   #denominations {
     display: grid;
@@ -212,8 +201,15 @@
 
 <script>
 const bankAccounts = ["FI","HDFC Old","HDFC New","ICICI","IndusInd","Kotak","RBL","SBI"];
-const creditCards = ["Axis Flipkart","HDFC Millennia","ICICI Amazon"];
-const denominations = [500,200,100,50,20,10,5,2,1];
+const creditCards = [
+  "Axis Flipkart","Axis MyZone","Axis Neo",
+  "HDFC PhonePe","HDFC Tata Neu","HDFC Millennia",
+  "HSBC","IDFC First Millenia",
+  "ICICI Amazon","ICICI Coral","ICICI Expressions",
+  "Indusind Plat Aura EDGE","Indusind Legend",
+  "Yes Finbooster","Kotak League","Kotak Image",
+  "SBI BPCL","Standard Chartered"
+];const denominations = [500,200,100,50,20,10,5,2,1];
 
 const fromTr = document.getElementById("from_trtype");
 const toTr = document.getElementById("to_trtype");
@@ -221,7 +217,7 @@ const amountInput = document.getElementById("amount");
 const denomBox = document.getElementById("denominationsBox");
 const denomContainer = document.getElementById("denominations");
 
-/* CREATE DENOMS ONCE */
+/* CREATE DENOMS */
 denominations.forEach(d => {
   denomContainer.innerHTML += `
     <div class="denom-row">
@@ -230,11 +226,9 @@ denominations.forEach(d => {
     </div>`;
 });
 
-/* EVENTS */
 fromTr.addEventListener("change", handleAll);
 toTr.addEventListener("change", handleAll);
 
-/* CORE HANDLER */
 function handleAll() {
   disableSameOption(fromTr, toTr);
   disableSameOption(toTr, fromTr);
@@ -243,17 +237,16 @@ function handleAll() {
   toggleCashUI();
 }
 
-/* 🔥 MUTUAL DISABLE */
 function disableSameOption(source, target) {
-  [...target.options].forEach(opt => opt.disabled = false);
+  [...target.options].forEach(o => o.disabled = false);
   if (source.value) {
-    [...target.options].forEach(opt => {
-      if (opt.value === source.value) opt.disabled = true;
+    [...target.options].forEach(o => {
+      if (o.value === source.value) o.disabled = true;
     });
   }
 }
 
-/* ACCOUNT LOGIC */
+/* ✅ FIXED ACCOUNT LOGIC */
 function setupAccount(tr, accId, labelId) {
   const acc = document.getElementById(accId);
   const label = document.getElementById(labelId);
@@ -268,12 +261,20 @@ function setupAccount(tr, accId, labelId) {
   acc.style.display = "block";
   label.style.display = "block";
 
-  const opts = ["UPI","NET","DEBIT"].includes(tr.value) ? bankAccounts : creditCards;
+  let options = [];
+
+  if (["UPI","NET","DEBIT"].includes(tr.value)) {
+    options = bankAccounts;
+  }
+
+  if (tr.value === "CREDIT") {
+    options = creditCards;
+  }
+
   acc.innerHTML = `<option value="">Select</option>`;
-  opts.forEach(o => acc.innerHTML += `<option>${o}</option>`);
+  options.forEach(o => acc.innerHTML += `<option>${o}</option>`);
 }
 
-/* CASH UI */
 function toggleCashUI() {
   if (fromTr.value === "cash" || toTr.value === "cash") {
     denomBox.style.display = "block";
