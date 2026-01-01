@@ -6,138 +6,92 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body {
+body{
   font-family: Arial, sans-serif;
-  background: #f5f5f5;
-  padding: 20px;
+  background:#f5f5f5;
+  padding:20px;
+}
+form{
+  position:relative;
+  background:#fff;
+  padding:20px;
+  border-radius:8px;
+  max-width:430px;
+  margin:auto;
+  box-shadow:0 0 10px rgba(0,0,0,.1);
+}
+label{font-weight:bold;margin-top:10px;display:block}
+input,select,textarea,button{
+  width:100%;
+  height:42px;
+  padding:8px 10px;
+  margin-top:5px;
+  border-radius:4px;
+  border:1px solid #ccc;
+  box-sizing:border-box;
+  background:#fff;
+}
+textarea{resize:none}
+.cash-grey{background:#f0f0f0!important}
+hr{margin:15px 0}
+button{
+  background:#007bff;
+  color:#fff;
+  border:none;
+  cursor:pointer;
 }
 
-form {
-  position: relative;
-  background: #ffffff;
-  padding: 20px;
-  border-radius: 8px;
-  max-width: 430px;
-  margin: auto;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+/* MENU */
+.menu-container{
+  position:absolute;
+  top:12px;
+  left:12px;
+  padding:8px;
 }
-
-/* ===== MENU ===== */
-.menu-container {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  padding: 8px;
+.menu-btn{
+  width:36px;height:36px;
+  border:1px solid #ccc;
+  border-radius:6px;
+  background:#fff;
+  font-size:22px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
 }
-
-.menu-btn {
-  width: 36px;
-  height: 36px;
-  font-size: 22px;
-  background: #ffffff;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+.menu-dropdown{
+  display:none;
+  position:absolute;
+  top:50px;
+  left:0;
+  background:#fff;
+  border-radius:6px;
+  min-width:230px;
+  box-shadow:0 4px 12px rgba(0,0,0,.25);
 }
-
-.menu-dropdown {
-  display: none;
-  position: absolute;
-  top: 50px;
-  left: 0;
-  background: #ffffff;
-  border-radius: 6px;
-  min-width: 230px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-}
-
 .menu-container:hover .menu-dropdown,
-.menu-dropdown:hover {
-  display: block;
+.menu-dropdown:hover{display:block}
+.menu-dropdown a{
+  display:block;
+  padding:12px 14px;
+  text-decoration:none;
+  color:#000;
+  border-bottom:1px solid #eee;
 }
+.menu-dropdown a:hover{background:#f0f0f0}
 
-.menu-dropdown a {
-  display: block;
-  padding: 12px 14px;
-  text-decoration: none;
-  color: #000;
-  border-bottom: 1px solid #eee;
+/* DENOMS */
+#denominations{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
 }
-
-.menu-dropdown a:hover {
-  background: #f0f0f0;
+.denom-row{
+  display:flex;
+  align-items:center;
+  gap:6px;
 }
-
-/* ===== FORM ELEMENTS ===== */
-label {
-  font-weight: bold;
-  margin-top: 10px;
-  display: block;
-}
-
-input,
-select,
-textarea,
-button {
-  width: 100%;
-  height: 42px;
-  padding: 8px 10px;
-  margin-top: 5px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  box-sizing: border-box;
-  background: #ffffff;
-  color: #000;
-}
-
-textarea {
-  resize: none;
-}
-
-/* 🔥 ONLY CASH AMOUNT GREY */
-.cash-grey {
-  background-color: #f0f0f0 !important;
-}
-
-/* Force everything else white */
-input:not(.cash-grey),
-select,
-textarea {
-  background-color: #ffffff !important;
-}
-
-hr {
-  margin: 15px 0;
-}
-
-button {
-  height: 44px;
-  margin-top: 15px;
-  background: #007bff;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-#denominations {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.denom-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.denom-row label {
-  width: 40px;
-  font-weight: bold;
-}
+.denom-row label{width:40px;font-weight:bold}
 </style>
 </head>
 
@@ -145,161 +99,188 @@ button {
 
 <form id="transferForm">
 
-  <!-- MENU -->
-  <div class="menu-container">
-    <div class="menu-btn">⋮</div>
-    <div class="menu-dropdown">
-      <a href="https://oprasannakumar.github.io/Financial-Transaction/" target="_blank">Financial Entries</a>
-      <a href="https://oprasannakumar.github.io/Monthlyexpences/" target="_blank">Monthly Expenses</a>
-      <a href="https://oprasannakumar.github.io/LoanTransfer/" target="_blank">Loan Entries</a>
-    </div>
+<!-- MENU -->
+<div class="menu-container">
+  <div class="menu-btn">⋮</div>
+  <div class="menu-dropdown">
+    <a href="https://oprasannakumar.github.io/Financial-Transaction/" target="_blank">Financial Entries</a>
+    <a href="https://oprasannakumar.github.io/Monthlyexpences/" target="_blank">Monthly Expenses</a>
+    <a href="https://oprasannakumar.github.io/LoanTransfer/" target="_blank">Loan Entries</a>
   </div>
+</div>
 
-  <h2 style="text-align:center;">Self Transfer</h2>
+<h2 style="text-align:center;">Self Transfer</h2>
 
-  <label>Date</label>
-  <input type="date" id="date" required>
+<label>Date</label>
+<input type="date" id="date" required>
 
-  <label>Narration</label>
-  <textarea id="narration" required></textarea>
+<label>Narration</label>
+<textarea id="narration" required></textarea>
 
-  <hr>
+<hr>
 
-  <h3>From</h3>
-  <label>Transaction Type</label>
-  <select id="from_trtype" required>
-    <option value="">Select</option>
-    <option value="cash">Cash</option>
-    <option value="UPI">UPI</option>
-    <option value="NET">Net Banking</option>
-    <option value="DEBIT">Debit</option>
-    <option value="CREDIT">Credit</option>
-  </select>
+<h3>From</h3>
+<label>Transaction Type</label>
+<select id="from_trtype" required>
+  <option value="">Select</option>
+  <option value="cash">Cash</option>
+  <option value="UPI">UPI</option>
+  <option value="NET">Net Banking</option>
+  <option value="DEBIT">Debit</option>
+  <option value="CREDIT">Credit</option>
+</select>
 
-  <label id="fromLabel" style="display:none;">From Account</label>
-  <select id="from_account" style="display:none;"></select>
+<label id="fromLabel" style="display:none;">From Account</label>
+<select id="from_account" style="display:none;"></select>
 
-  <hr>
+<hr>
 
-  <h3>To</h3>
-  <label>Transaction Type</label>
-  <select id="to_trtype" required>
-    <option value="">Select</option>
-    <option value="cash">Cash</option>
-    <option value="UPI">UPI</option>
-    <option value="NET">Net Banking</option>
-    <option value="DEBIT">Debit</option>
-    <option value="CREDIT">Credit</option>
-  </select>
+<h3>To</h3>
+<label>Transaction Type</label>
+<select id="to_trtype" required>
+  <option value="">Select</option>
+  <option value="cash">Cash</option>
+  <option value="UPI">UPI</option>
+  <option value="NET">Net Banking</option>
+  <option value="DEBIT">Debit</option>
+  <option value="CREDIT">Credit</option>
+</select>
 
-  <label id="toLabel" style="display:none;">To Account</label>
-  <select id="to_account" style="display:none;"></select>
+<label id="toLabel" style="display:none;">To Account</label>
+<select id="to_account" style="display:none;"></select>
 
-  <hr>
+<hr>
 
-  <div id="denominationsBox" style="display:none;">
-    <h3>Cash Denominations</h3>
-    <div id="denominations"></div>
-  </div>
+<div id="denominationsBox" style="display:none;">
+  <h3>Cash Denominations</h3>
+  <div id="denominations"></div>
+</div>
 
-  <label>Amount</label>
-  <input type="number" id="amount" required>
+<label>Amount</label>
+<input type="number" id="amount" required>
 
-  <button type="submit">Transfer</button>
+<button type="submit">Transfer</button>
 </form>
 
 <script>
-const bankAccounts = ["FI","HDFC Old","HDFC New","ICICI","IndusInd","Kotak","RBL","SBI"];
-const creditCards = [
+/* DATA */
+const bankAccounts=["FI","HDFC Old","HDFC New","ICICI","IndusInd","Kotak","RBL","SBI"];
+const creditCards=[
   "Axis Flipkart","Axis MyZone","Axis Neo",
-  "HDFC Millennia","ICICI Amazon"
+  "HDFC Millennia","ICICI Amazon","SBI BPCL"
 ];
-const denominations = [500,200,100,50,20,10,5,2,1];
+const denominations=[500,200,100,50,20,10,5,2,1];
 
-const fromTr = document.getElementById("from_trtype");
-const toTr = document.getElementById("to_trtype");
-const fromAcc = document.getElementById("from_account");
-const toAcc = document.getElementById("to_account");
-const amount = document.getElementById("amount");
-const denomBox = document.getElementById("denominationsBox");
-const denomWrap = document.getElementById("denominations");
+/* ELEMENTS */
+const fromTr=document.getElementById("from_trtype");
+const toTr=document.getElementById("to_trtype");
+const fromAcc=document.getElementById("from_account");
+const toAcc=document.getElementById("to_account");
+const amount=document.getElementById("amount");
+const denomBox=document.getElementById("denominationsBox");
+const denomWrap=document.getElementById("denominations");
 
-/* Create denomination inputs once */
-denominations.forEach(d => {
-  denomWrap.innerHTML += `
+/* CREATE DENOMS ONCE */
+denominations.forEach(d=>{
+  denomWrap.innerHTML+=`
     <div class="denom-row">
       <label>${d}</label>
       <input type="number" data-denom="${d}" value="0">
     </div>`;
 });
 
-/* Change handlers */
-fromTr.addEventListener("change", updateUI);
-toTr.addEventListener("change", updateUI);
-
-function updateUI() {
-  setupAccount(fromTr, fromAcc, "fromLabel");
-  setupAccount(toTr, toAcc, "toLabel");
-  toggleCashUI();
+/* MUTUAL DISABLE */
+function applyMutualDisable(source,target){
+  [...target.options].forEach(o=>o.disabled=false);
+  if(source.value){
+    [...target.options].forEach(o=>{
+      if(o.value===source.value) o.disabled=true;
+    });
+  }
 }
 
-function setupAccount(tr, acc, labelId) {
-  acc.innerHTML = "";
-  document.getElementById(labelId).style.display = "none";
-  acc.style.display = "none";
+/* EVENTS */
+fromTr.addEventListener("change",()=>{
+  applyMutualDisable(fromTr,toTr);
+  updateUI();
+});
+toTr.addEventListener("change",()=>{
+  applyMutualDisable(toTr,fromTr);
+  updateUI();
+});
 
-  if (!tr.value || tr.value === "cash") return;
-
-  const list = ["UPI","NET","DEBIT"].includes(tr.value) ? bankAccounts : creditCards;
-  acc.innerHTML = `<option value="">Select</option>`;
-  list.forEach(v => acc.innerHTML += `<option>${v}</option>`);
-  acc.style.display = "block";
-  document.getElementById(labelId).style.display = "block";
+/* UI UPDATE */
+function updateUI(){
+  setupAccount(fromTr,fromAcc,"fromLabel");
+  setupAccount(toTr,toAcc,"toLabel");
+  toggleCash();
 }
 
-function toggleCashUI() {
-  if (fromTr.value === "cash" || toTr.value === "cash") {
-    denomBox.style.display = "block";
-    amount.readOnly = true;
+/* ACCOUNT SETUP */
+function setupAccount(tr,acc,labelId){
+  acc.innerHTML="";
+  acc.style.display="none";
+  document.getElementById(labelId).style.display="none";
+
+  if(!tr.value||tr.value==="cash") return;
+
+  const list=["UPI","NET","DEBIT"].includes(tr.value)?bankAccounts:creditCards;
+  acc.innerHTML=`<option value="">Select</option>`;
+  list.forEach(v=>acc.innerHTML+=`<option>${v}</option>`);
+  acc.style.display="block";
+  document.getElementById(labelId).style.display="block";
+}
+
+/* CASH LOGIC */
+function toggleCash(){
+  if(fromTr.value==="cash"||toTr.value==="cash"){
+    denomBox.style.display="block";
+    amount.readOnly=true;
     amount.classList.add("cash-grey");
-  } else {
-    denomBox.style.display = "none";
-    amount.readOnly = false;
+  }else{
+    denomBox.style.display="none";
+    amount.readOnly=false;
     amount.classList.remove("cash-grey");
   }
 }
 
-/* Auto total */
-document.addEventListener("input", e => {
-  if (e.target.dataset.denom) {
-    let total = 0;
-    document.querySelectorAll("[data-denom]").forEach(i => {
-      total += Number(i.dataset.denom) * (Number(i.value) || 0);
+/* AUTO SUM */
+document.addEventListener("input",e=>{
+  if(e.target.dataset.denom){
+    let total=0;
+    document.querySelectorAll("[data-denom]").forEach(i=>{
+      total+=Number(i.dataset.denom)*(Number(i.value)||0);
     });
-    amount.value = total;
+    amount.value=total;
   }
 });
 
-/* Submit */
-document.getElementById("transferForm").addEventListener("submit", async e => {
+/* SUBMIT */
+document.getElementById("transferForm").addEventListener("submit",async e=>{
   e.preventDefault();
 
-  await fetch("https://hook.eu1.make.com/uayw6m2h1u56gz1fuhnyewvh860q8tjy", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      category: "self_transfer",
-      date: date.value,
-      narration: narration.value,
-      from: { trtype: fromTr.value, account: fromTr.value === "cash" ? "Cash" : fromAcc.value },
-      to: { trtype: toTr.value, account: toTr.value === "cash" ? "Cash" : toAcc.value },
-      amount: amount.value
+  const cashDenoms={};
+  document.querySelectorAll("[data-denom]").forEach(i=>{
+    cashDenoms[i.dataset.denom]=Number(i.value)||0;
+  });
+
+  await fetch("https://hook.eu1.make.com/uayw6m2h1u56gz1fuhnyewvh860q8tjy",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      category:"self_transfer",
+      date:date.value,
+      narration:narration.value,
+      from:{trtype:fromTr.value,account:fromTr.value==="cash"?"Cash":fromAcc.value},
+      to:{trtype:toTr.value,account:toTr.value==="cash"?"Cash":toAcc.value},
+      amount:amount.value,
+      cash_denominations:cashDenoms
     })
   });
 
   alert("Transfer recorded successfully");
   transferForm.reset();
-  denomBox.style.display = "none";
+  denomBox.style.display="none";
   amount.classList.remove("cash-grey");
 });
 </script>
