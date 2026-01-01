@@ -28,7 +28,6 @@
     top: 12px;
     left: 12px;
     padding: 8px;
-    z-index: 10;
   }
 
   .menu-btn {
@@ -66,11 +65,11 @@
     text-decoration: none;
     color: #000;
     border-bottom: 1px solid #eee;
-    font-size: 14px;
   }
 
-  .menu-dropdown a:last-child { border-bottom: none; }
-  .menu-dropdown a:hover { background: #f0f0f0; }
+  .menu-dropdown a:hover {
+    background: #f0f0f0;
+  }
 
   label {
     font-weight: bold;
@@ -108,8 +107,6 @@
     border: none;
     cursor: pointer;
   }
-
-  button:hover { background: #0056b3; }
 
   #denominations {
     display: grid;
@@ -189,7 +186,6 @@
   <div id="denominationsBox" style="display:none;">
     <h3>Cash Denominations</h3>
     <div id="denominations"></div>
-    <small>Enter positive or negative counts</small>
     <hr>
   </div>
 
@@ -209,7 +205,8 @@ const creditCards = [
   "Indusind Plat Aura EDGE","Indusind Legend",
   "Yes Finbooster","Kotak League","Kotak Image",
   "SBI BPCL","Standard Chartered"
-];const denominations = [500,200,100,50,20,10,5,2,1];
+];
+const denominations = [500,200,100,50,20,10,5,2,1];
 
 const fromTr = document.getElementById("from_trtype");
 const toTr = document.getElementById("to_trtype");
@@ -226,9 +223,11 @@ denominations.forEach(d => {
     </div>`;
 });
 
+/* EVENTS */
 fromTr.addEventListener("change", handleAll);
 toTr.addEventListener("change", handleAll);
 
+/* CORE */
 function handleAll() {
   disableSameOption(fromTr, toTr);
   disableSameOption(toTr, fromTr);
@@ -237,6 +236,7 @@ function handleAll() {
   toggleCashUI();
 }
 
+/* MUTUAL DISABLE */
 function disableSameOption(source, target) {
   [...target.options].forEach(o => o.disabled = false);
   if (source.value) {
@@ -246,13 +246,13 @@ function disableSameOption(source, target) {
   }
 }
 
-/* ✅ FIXED ACCOUNT LOGIC */
+/* ACCOUNT LOGIC */
 function setupAccount(tr, accId, labelId) {
   const acc = document.getElementById(accId);
   const label = document.getElementById(labelId);
   acc.innerHTML = "";
 
-  if (tr.value === "" || tr.value === "cash") {
+  if (!tr.value || tr.value === "cash") {
     acc.style.display = "none";
     label.style.display = "none";
     return;
@@ -262,19 +262,14 @@ function setupAccount(tr, accId, labelId) {
   label.style.display = "block";
 
   let options = [];
-
-  if (["UPI","NET","DEBIT"].includes(tr.value)) {
-    options = bankAccounts;
-  }
-
-  if (tr.value === "CREDIT") {
-    options = creditCards;
-  }
+  if (["UPI","NET","DEBIT"].includes(tr.value)) options = bankAccounts;
+  if (tr.value === "CREDIT") options = creditCards;
 
   acc.innerHTML = `<option value="">Select</option>`;
   options.forEach(o => acc.innerHTML += `<option>${o}</option>`);
 }
 
+/* CASH */
 function toggleCashUI() {
   if (fromTr.value === "cash" || toTr.value === "cash") {
     denomBox.style.display = "block";
@@ -314,8 +309,14 @@ document.getElementById("transferForm").addEventListener("submit", async e => {
       category: "self_transfer",
       date: date.value,
       narration: narration.value,
-      from: { trtype: fromTr.value },
-      to: { trtype: toTr.value },
+      from: {
+        trtype: fromTr.value,
+        account: fromTr.value === "cash" ? "Cash" : from_account.value
+      },
+      to: {
+        trtype: toTr.value,
+        account: toTr.value === "cash" ? "Cash" : to_account.value
+      },
       amount: amountInput.value,
       cash_denominations: cashDenoms
     })
