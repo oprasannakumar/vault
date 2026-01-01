@@ -6,87 +6,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body{
-  font-family:Arial,sans-serif;
-  background:#f5f5f5;
-  padding:20px;
-}
-form{
-  position:relative;
-  background:#fff;
-  padding:20px;
-  border-radius:8px;
-  max-width:430px;
-  margin:auto;
-  box-shadow:0 0 10px rgba(0,0,0,.1);
-}
-.menu-container{
-  position:absolute;
-  top:12px;
-  left:12px;
-  padding:8px;
-}
-.menu-btn{
-  width:36px;height:36px;
-  border:1px solid #ccc;
-  border-radius:6px;
-  background:#fff;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:22px;
-}
-.menu-dropdown{
-  display:none;
-  position:absolute;
-  top:50px;
-  left:0;
-  background:#fff;
-  border-radius:6px;
-  min-width:230px;
-  box-shadow:0 4px 12px rgba(0,0,0,.25);
-}
-.menu-container:hover .menu-dropdown,
-.menu-dropdown:hover{display:block;}
-.menu-dropdown a{
-  display:block;
-  padding:12px 14px;
-  text-decoration:none;
-  color:#000;
-  border-bottom:1px solid #eee;
-}
-.menu-dropdown a:hover{background:#f0f0f0;}
+body{font-family:Arial;background:#f5f5f5;padding:20px}
+form{position:relative;background:#fff;padding:20px;border-radius:8px;max-width:430px;margin:auto;box-shadow:0 0 10px rgba(0,0,0,.1)}
+label{font-weight:bold;margin-top:10px;display:block}
+input,select,textarea,button{width:100%;height:42px;padding:8px 10px;margin-top:5px;border-radius:4px;border:1px solid #ccc}
+textarea{resize:none}
+.cash-grey{background:#f0f0f0!important}
+hr{margin:15px 0}
+button{background:#007bff;color:#fff;border:none;cursor:pointer}
 
-label{font-weight:bold;margin-top:10px;display:block;}
-input,select,textarea,button{
-  width:100%;
-  height:42px;
-  padding:8px 10px;
-  margin-top:5px;
-  border-radius:4px;
-  border:1px solid #ccc;
-  box-sizing:border-box;
-  background:#fff;
-}
-textarea{resize:none;}
-.cash-grey{background:#f0f0f0 !important;}
-hr{margin:15px 0;}
-button{
-  height:44px;
-  margin-top:15px;
-  background:#007bff;
-  color:#fff;
-  border:none;
-  cursor:pointer;
-}
-#denominations{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:8px;
-}
-.denom-row{display:flex;align-items:center;gap:6px;}
-.denom-row label{width:40px;font-weight:bold;}
+.menu-container{position:absolute;top:12px;left:12px;padding:8px}
+.menu-btn{width:36px;height:36px;border:1px solid #ccc;border-radius:6px;background:#fff;cursor:pointer;font-size:22px;display:flex;align-items:center;justify-content:center}
+.menu-dropdown{display:none;position:absolute;top:50px;left:0;background:#fff;border-radius:6px;min-width:230px;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.menu-container:hover .menu-dropdown{display:block}
+.menu-dropdown a{display:block;padding:12px 14px;text-decoration:none;color:#000;border-bottom:1px solid #eee}
+.menu-dropdown a:hover{background:#f0f0f0}
+
+#denominations{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.denom-row{display:flex;align-items:center;gap:6px}
+.denom-row label{width:40px;font-weight:bold}
 </style>
 </head>
 
@@ -97,13 +35,13 @@ button{
 <div class="menu-container">
   <div class="menu-btn">⋮</div>
   <div class="menu-dropdown">
-    <a href="https://oprasannakumar.github.io/Financial-Transaction/" target="_blank">Financial Entries</a>
-    <a href="https://oprasannakumar.github.io/Monthlyexpences/" target="_blank">Monthly Expenses</a>
-    <a href="https://oprasannakumar.github.io/LoanTransfer/" target="_blank">Loan Entries</a>
+    <a href="https://oprasannakumar.github.io/Financial-Transaction/">Financial Entries</a>
+    <a href="https://oprasannakumar.github.io/Monthlyexpences/">Monthly Expenses</a>
+    <a href="https://oprasannakumar.github.io/LoanTransfer/">Loan Entries</a>
   </div>
 </div>
 
-<h2 style="text-align:center;">Self Transfer</h2>
+<h2 style="text-align:center">Self Transfer</h2>
 
 <label>Date</label>
 <input type="date" id="date" required>
@@ -124,8 +62,8 @@ button{
   <option value="CREDIT">Credit</option>
 </select>
 
-<label id="fromLabel" style="display:none;">From Account</label>
-<select id="from_account" style="display:none;"></select>
+<label id="fromLabel" style="display:none">From Account</label>
+<select id="from_account" style="display:none"></select>
 
 <hr>
 
@@ -140,15 +78,14 @@ button{
   <option value="CREDIT">Credit</option>
 </select>
 
-<label id="toLabel" style="display:none;">To Account</label>
-<select id="to_account" style="display:none;"></select>
+<label id="toLabel" style="display:none">To Account</label>
+<select id="to_account" style="display:none"></select>
 
 <hr>
 
-<div id="denominationsBox" style="display:none;">
+<div id="denominationsBox" style="display:none">
   <h3>Cash Denominations</h3>
   <div id="denominations"></div>
-  <hr>
 </div>
 
 <label>Amount</label>
@@ -159,89 +96,74 @@ button{
 
 <script>
 const bankAccounts=["FI","HDFC Old","HDFC New","ICICI","IndusInd","Kotak","RBL","SBI"];
-const creditCards=[
-  "Axis Flipkart","Axis MyZone","Axis Neo",
-  "HDFC PhonePe","HDFC Tata Neu","HDFC Millennia",
-  "HSBC","IDFC First Millenia",
-  "ICICI Amazon","ICICI Coral","ICICI Expressions",
-  "Indusind Plat Aura EDGE","Indusind Legend",
-  "Yes Finbooster","Kotak League","Kotak Image",
-  "SBI BPCL","Standard Chartered"
-];
+const creditCards=["Axis Flipkart","Axis MyZone","Axis Neo","HDFC Millennia","ICICI Amazon"];
 const denominations=[500,200,100,50,20,10,5,2,1];
 
 const fromTr=document.getElementById("from_trtype");
 const toTr=document.getElementById("to_trtype");
-const amountInput=document.getElementById("amount");
+const fromAcc=document.getElementById("from_account");
+const toAcc=document.getElementById("to_account");
+const amount=document.getElementById("amount");
 const denomBox=document.getElementById("denominationsBox");
-const denomContainer=document.getElementById("denominations");
+const denomWrap=document.getElementById("denominations");
 
-/* create denom inputs */
+let lastFromType="", lastToType="";
+
+/* Denoms */
 denominations.forEach(d=>{
-  denomContainer.innerHTML+=`
-    <div class="denom-row">
-      <label>${d}</label>
-      <input type="number" value="0" data-denom="${d}">
-    </div>`;
+  denomWrap.innerHTML+=`<div class="denom-row"><label>${d}</label><input type="number" data-denom="${d}" value="0"></div>`;
 });
 
-fromTr.addEventListener("change",handleAll);
-toTr.addEventListener("change",handleAll);
+/* Change handlers */
+fromTr.addEventListener("change",()=>updateSide("from"));
+toTr.addEventListener("change",()=>updateSide("to"));
 
-function handleAll(){
-  mutualDisable(fromTr,toTr);
-  mutualDisable(toTr,fromTr);
-  setupAccount(fromTr,"from_account","fromLabel");
-  setupAccount(toTr,"to_account","toLabel");
+function updateSide(side){
+  if(side==="from" && fromTr.value!==lastFromType){
+    buildAccounts(fromTr,fromAcc,"fromLabel");
+    lastFromType=fromTr.value;
+  }
+  if(side==="to" && toTr.value!==lastToType){
+    buildAccounts(toTr,toAcc,"toLabel");
+    lastToType=toTr.value;
+  }
   toggleCash();
 }
 
-function mutualDisable(src,tgt){
-  [...tgt.options].forEach(o=>o.disabled=false);
-  if(src.value){
-    [...tgt.options].forEach(o=>{
-      if(o.value===src.value) o.disabled=true;
-    });
-  }
-}
-
-function setupAccount(tr,accId,labelId){
-  const acc=document.getElementById(accId);
-  const label=document.getElementById(labelId);
+function buildAccounts(tr,acc,labelId){
   acc.innerHTML="";
-  if(!tr.value||tr.value==="cash"){
-    acc.style.display="none";
-    label.style.display="none";
-    return;
-  }
-  acc.style.display="block";
-  label.style.display="block";
-  let opts=[];
-  if(["UPI","NET","DEBIT"].includes(tr.value)) opts=bankAccounts;
-  if(tr.value==="CREDIT") opts=creditCards;
+  document.getElementById(labelId).style.display="none";
+  acc.style.display="none";
+
+  if(!tr.value||tr.value==="cash") return;
+
+  let list=["UPI","NET","DEBIT"].includes(tr.value)?bankAccounts:creditCards;
   acc.innerHTML=`<option value="">Select</option>`;
-  opts.forEach(o=>acc.innerHTML+=`<option>${o}</option>`);
+  list.forEach(v=>acc.innerHTML+=`<option>${v}</option>`);
+  acc.style.display="block";
+  document.getElementById(labelId).style.display="block";
 }
 
 function toggleCash(){
   if(fromTr.value==="cash"||toTr.value==="cash"){
     denomBox.style.display="block";
-    amountInput.readOnly=true;
-    amountInput.classList.add("cash-grey");
+    amount.readOnly=true;
+    amount.classList.add("cash-grey");
   }else{
     denomBox.style.display="none";
-    amountInput.readOnly=false;
-    amountInput.classList.remove("cash-grey");
+    amount.readOnly=false;
+    amount.classList.remove("cash-grey");
   }
 }
 
+/* Auto sum */
 document.addEventListener("input",e=>{
   if(e.target.dataset.denom){
-    let total=0;
+    let t=0;
     document.querySelectorAll("[data-denom]").forEach(i=>{
-      total+=Number(i.dataset.denom)*(Number(i.value)||0);
+      t+=Number(i.dataset.denom)*(Number(i.value)||0);
     });
-    amountInput.value=total;
+    amount.value=t;
   }
 });
 
@@ -249,35 +171,20 @@ document.addEventListener("input",e=>{
 document.getElementById("transferForm").addEventListener("submit",async e=>{
   e.preventDefault();
 
-  const cashDenoms={};
-  document.querySelectorAll("[data-denom]").forEach(i=>{
-    cashDenoms[i.dataset.denom]=Number(i.value)||0;
-  });
-
   await fetch("https://hook.eu1.make.com/uayw6m2h1u56gz1fuhnyewvh860q8tjy",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       category:"self_transfer",
-      date:document.getElementById("date").value,
-      narration:document.getElementById("narration").value,
-      from:{
-        trtype:fromTr.value,
-        account:fromTr.value==="cash"?"Cash":document.getElementById("from_account").value
-      },
-      to:{
-        trtype:toTr.value,
-        account:toTr.value==="cash"?"Cash":document.getElementById("to_account").value
-      },
-      amount:amountInput.value,
-      cash_denominations:cashDenoms
+      date:date.value,
+      narration:narration.value,
+      from:{trtype:fromTr.value,account:fromTr.value==="cash"?"Cash":fromAcc.value},
+      to:{trtype:toTr.value,account:toTr.value==="cash"?"Cash":toAcc.value},
+      amount:amount.value
     })
   });
 
-  alert("Transfer recorded successfully");
-  transferForm.reset();
-  denomBox.style.display="none";
-  amountInput.classList.remove("cash-grey");
+  alert("Transfer saved");
 });
 </script>
 
