@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Monthly Expenses</title>
+<title>Self Transfer</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -16,7 +16,7 @@
     background: #ffffff;
     padding: 20px;
     border-radius: 8px;
-    max-width: 420px;
+    max-width: 430px;
     margin: auto;
     box-shadow: 0 0 10px rgba(0,0,0,0.1);
   }
@@ -27,7 +27,7 @@
     display: block;
   }
 
-  /* 🔥 SAME SIZE FOR ALL BOXES */
+  /* Uniform size */
   input,
   select,
   textarea,
@@ -49,33 +49,20 @@
     line-height: 24px;
   }
 
-  /* 🔥 GREY ONLY FOR CASH AMOUNT */
+  /* 🔥 ONLY CASH AMOUNT GREY */
   .cash-grey {
     background-color: #f0f0f0 !important;
+    color: #000;
   }
 
-  /* Keep disabled/selects white */
-  input:disabled,
+  /* Disabled selects still white */
   select:disabled {
     background-color: #ffffff !important;
     opacity: 1;
   }
 
-  .radio-group {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 10px;
-  }
-
-  .radio-group input {
-    width: auto;
-    height: auto;
-  }
-
-  .denoms {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+  hr {
+    margin: 15px 0;
   }
 
   button {
@@ -91,117 +78,90 @@
   button:hover {
     background: #0056b3;
   }
+
+  #denominations {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .denom-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .denom-row label {
+    width: 40px;
+    margin: 0;
+    font-weight: bold;
+  }
+
+  .denom-row input {
+    height: 42px;
+  }
 </style>
 </head>
 
 <body>
 
-<form id="expenseForm">
-<h2>Transaction Entry</h2>
+<form id="transferForm">
+<h2>Self Transfer</h2>
 
 <label>Date</label>
 <input type="date" id="date" required>
 
 <label>Narration</label>
-<input type="text" id="narration" required>
+<textarea id="narration" required></textarea>
 
-<label>Purpose</label>
-<select id="purpose" required>
-  <option value="">Select</option>
-  <option>Business</option>
-  <option>Donation</option>
-  <option>Entertainment</option>
-  <option>Food</option>
-  <option>Grocery</option>
-  <option>Hospital</option>
-  <option>House</option>
-  <option>Income</option>
-  <option>Insurance</option>
-  <option>Loan</option>
-  <option>Medicines</option>
-  <option>Miscellaneous</option>
-  <option>Puja</option>
-  <option>Tax</option>
-  <option>Travelling</option>
-  <option>Utility Bills</option>
-  <option>Water</option>
-  <option>Other</option>
-</select>
+<hr>
 
-<input type="text" id="otherPurpose" placeholder="Enter custom purpose" style="display:none;">
-
-<label>Spent For</label>
-<select id="spentFor" required>
-  <option value="">Select</option>
-  <option>Chinnama</option>
-  <option>Grand Father</option>
-  <option>House</option>
-  <option>Vasavi</option>
-  <option>Mother</option>
-  <option>Pedhamma</option>
-  <option>Srinivas Babai</option>
-  <option>Self</option>
-  <option>Other</option>
-</select>
-
-<input type="text" id="otherSpentFor" placeholder="Enter name" style="display:none;">
-
-<label>Transaction Flow</label>
-<div class="radio-group">
-  <label><input type="radio" name="flow_type" value="deposit" required> Deposit</label>
-  <label><input type="radio" name="flow_type" value="withdraw"> Withdraw</label>
-</div>
-
+<h3>From</h3>
 <label>Transaction Type</label>
-<select id="trtype" required>
+<select id="from_trtype" required>
   <option value="">Select</option>
-  <option value="CASH">Cash</option>
-  <option value="CREDIT">Credit</option>
-  <option value="DEBIT">Debit</option>
-  <option value="NET">Net Banking</option>
-  <option value="REWARDS">Rewards</option>
+  <option value="cash">Cash</option>
   <option value="UPI">UPI</option>
+  <option value="NET">Net Banking</option>
+  <option value="DEBIT">Debit</option>
+  <option value="CREDIT">Credit</option>
 </select>
 
-<label id="accountLabel" style="display:none;">From / To</label>
-<select id="from_to" style="display:none;"></select>
+<label id="fromLabel" style="display:none;">From Account</label>
+<select id="from_account" style="display:none;"></select>
 
-<input type="text" id="otherReward" placeholder="Enter reward source" style="display:none;">
+<hr>
 
-<div id="denominationSection" style="display:none;">
-  <label>Cash Denominations</label>
-  <div class="denoms">
-    <input type="number" class="denom" data-val="1" placeholder="₹1" disabled>
-    <input type="number" class="denom" data-val="2" placeholder="₹2" disabled>
-    <input type="number" class="denom" data-val="5" placeholder="₹5" disabled>
-    <input type="number" class="denom" data-val="10" placeholder="₹10" disabled>
-    <input type="number" class="denom" data-val="20" placeholder="₹20" disabled>
-    <input type="number" class="denom" data-val="50" placeholder="₹50" disabled>
-    <input type="number" class="denom" data-val="100" placeholder="₹100" disabled>
-    <input type="number" class="denom" data-val="200" placeholder="₹200" disabled>
-    <input type="number" class="denom" data-val="500" placeholder="₹500" disabled>
-  </div>
+<h3>To</h3>
+<label>Transaction Type</label>
+<select id="to_trtype" required>
+  <option value="">Select</option>
+  <option value="cash">Cash</option>
+  <option value="UPI">UPI</option>
+  <option value="NET">Net Banking</option>
+  <option value="DEBIT">Debit</option>
+  <option value="CREDIT">Credit</option>
+</select>
+
+<label id="toLabel" style="display:none;">To Account</label>
+<select id="to_account" style="display:none;"></select>
+
+<hr>
+
+<div id="denominationsBox" style="display:none;">
+  <h3>Cash Denominations</h3>
+  <div id="denominations"></div>
+  <small>Enter positive or negative counts</small>
+  <hr>
 </div>
 
 <label>Amount</label>
 <input type="number" id="amount" step="0.01" required>
 
-<button type="submit">Submit</button>
+<button type="submit">Transfer</button>
 </form>
 
 <script>
-const purposeSelect = document.getElementById("purpose");
-const otherPurpose = document.getElementById("otherPurpose");
-const spentFor = document.getElementById("spentFor");
-const otherSpentFor = document.getElementById("otherSpentFor");
-const trtype = document.getElementById("trtype");
-const fromTo = document.getElementById("from_to");
-const accountLabel = document.getElementById("accountLabel");
-const amountInput = document.getElementById("amount");
-const denominationSection = document.getElementById("denominationSection");
-const denomInputs = document.querySelectorAll(".denom");
-const otherReward = document.getElementById("otherReward");
-
 const bankAccounts = ["FI","HDFC Old","HDFC New","ICICI","IndusInd","Kotak","RBL","SBI"];
 const creditCards = [
   "Axis Flipkart","Axis MyZone","Axis Neo",
@@ -212,109 +172,121 @@ const creditCards = [
   "Yes Finbooster","Kotak League","Kotak Image",
   "SBI BPCL","Standard Chartered"
 ];
-const rewardsApps = ["PhonePe","Amazon","Flipkart","Other"];
+const denominations = [500,200,100,50,20,10,5,2,1];
 
-/* Purpose */
-purposeSelect.addEventListener("change", () => {
-  otherPurpose.style.display = purposeSelect.value === "Other" ? "block" : "none";
-  otherPurpose.required = purposeSelect.value === "Other";
-});
+const fromTr = document.getElementById("from_trtype");
+const toTr = document.getElementById("to_trtype");
+const amountInput = document.getElementById("amount");
 
-/* Spent For */
-spentFor.addEventListener("change", () => {
-  otherSpentFor.style.display = spentFor.value === "Other" ? "block" : "none";
-  otherSpentFor.required = spentFor.value === "Other";
-});
+fromTr.addEventListener("change", handleAll);
+toTr.addEventListener("change", handleAll);
 
-/* Cash amount calculation */
-function calculateAmount() {
-  let total = 0;
-  denomInputs.forEach(i => {
-    total += (Number(i.value) || 0) * Number(i.dataset.val);
-  });
-  amountInput.value = total;
+function handleAll() {
+  disableSameOption(fromTr, toTr);
+  disableSameOption(toTr, fromTr);
+  handleAccounts();
+  toggleCashUI();
 }
 
-/* Transaction Type */
-trtype.addEventListener("change", () => {
-  fromTo.innerHTML = "";
-  otherReward.style.display = "none";
-  otherReward.value = "";
+function disableSameOption(source, target) {
+  const val = source.value;
+  [...target.options].forEach(o => {
+    o.disabled = o.value !== "" && o.value === val;
+  });
+}
 
-  if (trtype.value === "CASH") {
-    denominationSection.style.display = "block";
-    accountLabel.style.display = "none";
-    fromTo.style.display = "none";
+function handleAccounts() {
+  setupAccount(fromTr, "from_account", "fromLabel");
+  setupAccount(toTr, "to_account", "toLabel");
+}
 
-    amountInput.readOnly = true;
-    amountInput.classList.add("cash-grey");
-    amountInput.value = 0;
+function setupAccount(tr, accId, labelId) {
+  const acc = document.getElementById(accId);
+  const label = document.getElementById(labelId);
+  acc.innerHTML = "";
 
-    denomInputs.forEach(i => {
-      i.disabled = false;
-      i.addEventListener("input", calculateAmount);
-    });
+  if (tr.value === "" || tr.value === "cash") {
+    acc.style.display = "none";
+    label.style.display = "none";
     return;
   }
 
-  denominationSection.style.display = "none";
-  denomInputs.forEach(i => {
-    i.disabled = true;
-    i.value = "";
-  });
-
-  amountInput.readOnly = false;
-  amountInput.classList.remove("cash-grey");
-  amountInput.value = "";
-
-  accountLabel.style.display = "block";
-  fromTo.style.display = "block";
-  fromTo.required = true;
+  acc.style.display = "block";
+  label.style.display = "block";
 
   let options = [];
-  if (["UPI","NET","DEBIT"].includes(trtype.value)) options = bankAccounts;
-  if (trtype.value === "CREDIT") options = creditCards;
-  if (trtype.value === "REWARDS") options = rewardsApps;
+  if (["UPI","NET","DEBIT"].includes(tr.value)) options = bankAccounts;
+  if (tr.value === "CREDIT") options = creditCards;
 
-  fromTo.innerHTML = `<option value="">Select</option>`;
-  options.forEach(v => fromTo.innerHTML += `<option>${v}</option>`);
-});
+  acc.innerHTML = `<option value="">Select</option>`;
+  options.forEach(o => acc.innerHTML += `<option>${o}</option>`);
+}
 
-/* Rewards → Other */
-fromTo.addEventListener("change", () => {
-  if (trtype.value === "REWARDS" && fromTo.value === "Other") {
-    otherReward.style.display = "block";
-    otherReward.required = true;
+function toggleCashUI() {
+  const fromCash = fromTr.value === "cash";
+  const toCash = toTr.value === "cash";
+  const box = document.getElementById("denominationsBox");
+
+  if (fromCash || toCash) {
+    box.style.display = "block";
+    createDenominations();
+    amountInput.readOnly = true;
+    amountInput.classList.add("cash-grey");
+    amountInput.value = "";
   } else {
-    otherReward.style.display = "none";
-    otherReward.required = false;
-    otherReward.value = "";
+    box.style.display = "none";
+    document.getElementById("denominations").innerHTML = "";
+    amountInput.readOnly = false;
+    amountInput.classList.remove("cash-grey");
+    amountInput.value = "";
+  }
+}
+
+function createDenominations() {
+  const c = document.getElementById("denominations");
+  if (c.children.length) return;
+
+  denominations.forEach(d => {
+    c.innerHTML += `
+      <div class="denom-row">
+        <label>${d}</label>
+        <input type="number" value="0" data-denom="${d}">
+      </div>`;
+  });
+}
+
+document.addEventListener("input", e => {
+  if (e.target.closest("#denominations")) {
+    let total = 0;
+    document.querySelectorAll("#denominations input").forEach(i => {
+      total += Number(i.dataset.denom) * (Number(i.value) || 0);
+    });
+    amountInput.value = total;
   }
 });
 
-/* Submit */
-document.getElementById("expenseForm").addEventListener("submit", async e => {
+document.getElementById("transferForm").addEventListener("submit", async e => {
   e.preventDefault();
 
-  const denominations = {};
-  denomInputs.forEach(i => denominations[i.dataset.val] = i.value || 0);
+  const cashDenoms = {};
+  document.querySelectorAll("#denominations input").forEach(i => {
+    cashDenoms[i.dataset.denom] = Number(i.value) || 0;
+  });
 
   const data = {
-    category: "monthly_expense",
+    category: "self_transfer",
     date: date.value,
     narration: narration.value,
-    purpose: purposeSelect.value === "Other" ? otherPurpose.value : purposeSelect.value,
-    spent_for: spentFor.value === "Other" ? otherSpentFor.value : spentFor.value,
-    flow_type: document.querySelector('input[name="flow_type"]:checked').value,
-    trtype: trtype.value,
-    from_to:
-      trtype.value === "CASH"
-        ? "Cash"
-        : (trtype.value === "REWARDS" && fromTo.value === "Other"
-            ? otherReward.value
-            : fromTo.value),
-    amount: amountInput.value,
-    denominations
+    from: {
+      trtype: fromTr.value,
+      account: fromTr.value === "cash" ? "Cash" : from_account.value
+    },
+    to: {
+      trtype: toTr.value,
+      account: toTr.value === "cash" ? "Cash" : to_account.value
+    },
+    amount: Number(amountInput.value),
+    cash_denominations: cashDenoms
   };
 
   await fetch("https://hook.eu1.make.com/uayw6m2h1u56gz1fuhnyewvh860q8tjy", {
@@ -323,17 +295,11 @@ document.getElementById("expenseForm").addEventListener("submit", async e => {
     body: JSON.stringify(data)
   });
 
-  alert("Transaction saved successfully");
-  expenseForm.reset();
-
+  alert("Transfer recorded successfully");
+  transferForm.reset();
+  document.getElementById("denominationsBox").style.display = "none";
   amountInput.readOnly = false;
   amountInput.classList.remove("cash-grey");
-  denominationSection.style.display = "none";
-  fromTo.style.display = "none";
-  accountLabel.style.display = "none";
-  otherPurpose.style.display = "none";
-  otherSpentFor.style.display = "none";
-  otherReward.style.display = "none";
 });
 </script>
 
