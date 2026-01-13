@@ -303,8 +303,12 @@ function finalSubmit(){
   closeModal();
   alert("Transfer recorded");
   transferForm.reset();
-  denominationsBox.style.display="none";
-  amount.classList.remove("amount-cash");
+
+/* ✅ Always set date to today */
+date.value = new Date().toISOString().split("T")[0];
+
+denominationsBox.style.display="none";
+amount.classList.remove("amount-cash");
 }
 </script>
 
