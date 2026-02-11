@@ -303,7 +303,11 @@
     r.readAsText(i.files[0]);
 }
 
-
+function disableBiometric() {
+    localStorage.removeItem("vault_bio_id");
+    localStorage.removeItem("vault_bio_enabled");
+    alert("Biometrics disabled.");
+}
     function showRecovery() { document.getElementById('unlockSection').classList.add('hidden'); document.getElementById('recoverySection').classList.remove('hidden'); }
     function handleRecovery() {
         const input = document.getElementById('rkInput').value.trim();
@@ -356,7 +360,7 @@ async function registerBiometric() {
 
         const credId = bufferToBase64(credential.rawId);
         localStorage.setItem("vault_bio_id", credId);
-
+        localStorage.setItem("vault_bio_enabled", "true");
         alert("Biometric enabled successfully!");
     } catch (err) {
         console.error(err);
@@ -367,16 +371,18 @@ async function registerBiometric() {
 // ===== Unlock With Biometrics =====
 async function unlockWithBiometric() {
 
+    const enabled = localStorage.getItem("vault_bio_enabled");
     const storedId = localStorage.getItem("vault_bio_id");
-    if (!storedId) {
-        alert("Enable biometric first.");
+
+    if (!enabled || !storedId) {
+        alert("Biometrics not enabled.");
         return;
     }
 
     const challenge = randomChallenge();
 
     const publicKey = {
-        challenge: challenge,
+        challenge,
         allowCredentials: [{
             id: base64ToBuffer(storedId),
             type: "public-key",
@@ -389,17 +395,25 @@ async function unlockWithBiometric() {
     try {
         await navigator.credentials.get({ publicKey });
 
-        // SUCCESS → unlock vault
-        MASTER_KEY = localStorage.getItem("vault_hash"); // just unlock UI
+        const pass = prompt("Enter Master Password:");
+        if (!pass) return;
+
+        if (CryptoJS.SHA256(pass).toString() !== localStorage.getItem('vault_hash')) {
+            alert("Incorrect password.");
+            return;
+        }
+
+        MASTER_KEY = pass;
+
         document.getElementById('unlockSection').classList.add('hidden');
         document.getElementById('mainContent').classList.remove('hidden');
         updateDropdown();
 
     } catch (err) {
-        console.error(err);
         alert("Biometric verification failed.");
     }
 }
+
 
 </script>
 </body>
