@@ -233,7 +233,6 @@ async function registerPasskey() {
 
 async function biometricUnlock() {
     const savedId = localStorage.getItem(PASSKEY_ID_KEY);
-
     if (!savedId) {
         alert("No biometric enrolled.");
         return;
@@ -252,13 +251,23 @@ async function biometricUnlock() {
     try {
         await navigator.credentials.get({ publicKey });
 
-        const temp = sessionStorage.getItem("vault_temp_master");
-        if (!temp) {
+        const encryptedMaster = localStorage.getItem("vault_saved_master");
+        if (!encryptedMaster) {
             alert("Unlock once with password first.");
             return;
         }
 
-        MASTER_KEY = temp;
+        // Decrypt using itself
+        const decrypted = CryptoJS.AES.decrypt(encryptedMaster, 
+                        CryptoJS.AES.decrypt(encryptedMaster, encryptedMaster)
+                        ).toString(CryptoJS.enc.Utf8);
+
+        if (!decrypted) {
+            alert("Password restore failed.");
+            return;
+        }
+
+        MASTER_KEY = decrypted;
         openVault();
 
     } catch {
@@ -271,25 +280,50 @@ async function biometricUnlock() {
 /* ============================= */
 
 function unlockVault() {
-    const pass = document.getElementById('masterPass').value;
+    const pass = document.getElementById('masterPass').value.trim();
     const storedHash = localStorage.getItem(VAULT_HASH_KEY);
 
+    if (!pass) {
+        alert("Enter your master password.");
+        return;
+    }
+
+    // 🔹 First-time setup
     if (!storedHash) {
         MASTER_KEY = pass;
-        localStorage.setItem(VAULT_HASH_KEY, CryptoJS.SHA256(pass).toString());
-        sessionStorage.setItem("vault_temp_master", pass);
-        alert("Vault created!");
-    } else {
+
+        localStorage.setItem(
+            VAULT_HASH_KEY,
+            CryptoJS.SHA256(pass).toString()
+        );
+
+        // Save encrypted master key for biometric unlock
+        localStorage.setItem(
+            "vault_saved_master",
+            CryptoJS.AES.encrypt(pass, pass).toString()
+        );
+
+        alert("Vault created successfully!");
+    } 
+    // 🔹 Existing vault
+    else {
         if (CryptoJS.SHA256(pass).toString() !== storedHash) {
             alert("Wrong password!");
             return;
         }
+
         MASTER_KEY = pass;
-        sessionStorage.setItem("vault_temp_master", pass);
+
+        // Update stored encrypted master
+        localStorage.setItem(
+            "vault_saved_master",
+            CryptoJS.AES.encrypt(pass, pass).toString()
+        );
     }
 
     openVault();
 }
+
 
 function openVault() {
     document.getElementById('unlockSection').classList.add('hidden');
