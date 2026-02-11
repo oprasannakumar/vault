@@ -66,6 +66,10 @@
             <input type="password" id="settNewPass" placeholder="New Password">
             <button class="btn btn-blue" onclick="changePassword()">Change Password</button>
             <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
+            <button class="btn btn-green" onclick="registerPasskey()">
+    🔐 Enroll Biometrics
+</button>
+            <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
             <div id="rkBox" class="hidden">
                 <div class="rk-display" id="rkVal"></div>
                 <button class="btn btn-ghost" onclick="copy(document.getElementById('rkVal').innerText, 'Key Copied!')" style="font-size: 0.7rem;">📋 Copy Key</button>
@@ -181,22 +185,64 @@ async function registerPasskey() {
         alert("Passkey registration failed.");
     }
 }
+async function registerPasskey() {
+    if (!window.PublicKeyCredential) {
+        alert("Passkeys not supported on this browser.");
+        return;
+    }
 
+    if (!MASTER_KEY) {
+        alert("Unlock vault first.");
+        return;
+    }
+
+    const publicKey = {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rp: { name: "Secure Card Vault" },
+        user: {
+            id: crypto.getRandomValues(new Uint8Array(16)),
+            name: "vault-user",
+            displayName: "Vault User"
+        },
+        pubKeyCredParams: [
+            { type: "public-key", alg: -7 }
+        ],
+        authenticatorSelection: {
+            userVerification: "required"
+        },
+        timeout: 60000,
+        attestation: "none"
+    };
+
+    try {
+        const credential = await navigator.credentials.create({ publicKey });
+
+        localStorage.setItem(
+            PASSKEY_ID_KEY,
+            btoa(String.fromCharCode(...new Uint8Array(credential.rawId)))
+        );
+
+        alert("Biometric enrollment successful!");
+    } catch (e) {
+        alert("Enrollment failed.");
+    }
+}
 /* ============================= */
 /* PASSKEY AUTHENTICATION */
 /* ============================= */
 
 async function biometricUnlock() {
     const savedId = localStorage.getItem(PASSKEY_ID_KEY);
+
     if (!savedId) {
-        alert("No passkey registered yet.");
+        alert("No biometric enrolled.");
         return;
     }
 
     const publicKey = {
-        challenge: randomChallenge(),
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
         allowCredentials: [{
-            id: fromBase64(savedId),
+            id: Uint8Array.from(atob(savedId), c => c.charCodeAt(0)),
             type: "public-key"
         }],
         userVerification: "required",
@@ -232,7 +278,6 @@ function unlockVault() {
         MASTER_KEY = pass;
         localStorage.setItem(VAULT_HASH_KEY, CryptoJS.SHA256(pass).toString());
         sessionStorage.setItem("vault_temp_master", pass);
-        registerPasskey();
         alert("Vault created!");
     } else {
         if (CryptoJS.SHA256(pass).toString() !== storedHash) {
