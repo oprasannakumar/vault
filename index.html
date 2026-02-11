@@ -142,20 +142,44 @@
     if(localStorage.getItem('vault_hash')) document.getElementById('forgotLink').classList.remove('hidden');
 
     function unlockVault() {
-        const pass = document.getElementById('masterPass').value;
-        const storedHash = localStorage.getItem('vault_hash');
-        if (!storedHash) {
-            MASTER_KEY = pass;
-            localStorage.setItem('vault_hash', CryptoJS.SHA256(pass).toString());
-            alert("Vault created! Visit Settings to generate your Recovery Key.");
-        } else {
-            if (CryptoJS.SHA256(pass).toString() !== storedHash) return alert("Wrong password!");
-            MASTER_KEY = pass;
+    const pass = document.getElementById('masterPass').value;
+    const storedHash = localStorage.getItem('vault_hash');
+
+    if (!storedHash) {
+        // First time setup
+        const salt = CryptoJS.lib.WordArray.random(16).toString();
+        localStorage.setItem("vault_salt", salt);
+
+        const derived = deriveKey(pass, salt);
+        localStorage.setItem("vault_hash", CryptoJS.SHA256(derived).toString());
+
+        MASTER_KEY = derived;
+
+        const VEK = CryptoJS.lib.WordArray.random(32).toString();
+        localStorage.setItem(
+            "vault_vek_enc",
+            CryptoJS.AES.encrypt(VEK, MASTER_KEY).toString()
+        );
+
+        localStorage.setItem("vault_data", JSON.stringify([]));
+
+        alert("Vault created securely!");
+    } else {
+        const salt = localStorage.getItem("vault_salt");
+        const derived = deriveKey(pass, salt);
+
+        if (CryptoJS.SHA256(derived).toString() !== storedHash) {
+            alert("Wrong password!");
+            return;
         }
-        document.getElementById('unlockSection').classList.add('hidden');
-        document.getElementById('mainContent').classList.remove('hidden');
-        updateDropdown();
+
+        MASTER_KEY = derived;
     }
+
+    document.getElementById('unlockSection').classList.add('hidden');
+    document.getElementById('mainContent').classList.remove('hidden');
+    updateDropdown();
+}
 
     function handleMainAction() { toggleAddForm(!!document.getElementById('cardSelector').value); }
 
@@ -171,6 +195,14 @@
             ['nick','num','name','exp','cvv'].forEach(k => document.getElementById(k).value = "");
         }
     }
+    function getVEK() {
+    const enc = localStorage.getItem("vault_vek_enc");
+    if (!enc) return null;
+
+    return CryptoJS.AES.decrypt(enc, MASTER_KEY)
+        .toString(CryptoJS.enc.Utf8);
+}
+
 function updateBiometricUI() {
     const bioBtn = document.getElementById("bioUnlockBtn");
     const enabled = localStorage.getItem("vault_bio_enabled");
@@ -183,16 +215,54 @@ function updateBiometricUI() {
 }
 
     function saveCard() {
-        const editId = document.getElementById('editId').value;
-        const card = { id: editId ? parseInt(editId) : Date.now(), nick: document.getElementById('nick').value, type: document.getElementById('type').value, num: document.getElementById('num').value, name: document.getElementById('name').value, exp: document.getElementById('exp').value, cvv: document.getElementById('cvv').value };
-        if(!card.nick || !card.num || card.exp.length < 5) return alert("Fill all info correctly!");
-        let cards = getCards();
-        if (editId) cards[cards.findIndex(c => c.id == editId)] = card;
-        else cards.push(card);
-        localStorage.setItem('vault_data', CryptoJS.AES.encrypt(JSON.stringify(cards), MASTER_KEY).toString());
-        toggleAddForm(); updateDropdown();
-        document.getElementById('cardSelector').value = card.id; handleSelection();
+
+    const editId = document.getElementById('editId').value;
+
+    const cardData = {
+        num: document.getElementById('num').value,
+        name: document.getElementById('name').value,
+        exp: document.getElementById('exp').value,
+        cvv: document.getElementById('cvv').value
+    };
+
+    if (!cardData.num || cardData.exp.length < 5) {
+        alert("Fill all info correctly!");
+        return;
     }
+
+    const VEK = getVEK();
+
+    const secureCard = {
+        id: editId ? parseInt(editId) : Date.now(),
+        nick: document.getElementById('nick').value,
+        type: document.getElementById('type').value,
+        secure: CryptoJS.AES.encrypt(
+            JSON.stringify(cardData),
+            VEK
+        ).toString()
+    };
+
+    let cards = JSON.parse(localStorage.getItem('vault_data') || "[]");
+
+    if (editId) {
+        const index = cards.findIndex(c => c.id == editId);
+        cards[index] = secureCard;
+    } else {
+        cards.push(secureCard);
+    }
+
+    localStorage.setItem('vault_data', JSON.stringify(cards));
+
+    toggleAddForm();
+    updateDropdown();
+}
+
+function deriveKey(password, salt) {
+    return CryptoJS.PBKDF2(password, salt, {
+        keySize: 256 / 32,
+        iterations: 150000
+    }).toString();
+}
 
    function handleSelection() {
     const id = document.getElementById('cardSelector').value;
@@ -262,8 +332,38 @@ function updateBiometricUI() {
 }
 
 
-    function deleteCard(id) { if(confirm("Delete permanently?")) { let cards = getCards().filter(c => c.id != id); localStorage.setItem('vault_data', CryptoJS.AES.encrypt(JSON.stringify(cards), MASTER_KEY).toString()); updateDropdown(); handleSelection(); } }
-    function getCards() { const d = localStorage.getItem('vault_data'); try { return d ? JSON.parse(CryptoJS.AES.decrypt(d, MASTER_KEY).toString(CryptoJS.enc.Utf8)) : []; } catch(e) { return []; } }
+   function deleteCard(id) {
+    if (!confirm("Delete permanently?")) return;
+
+    let cards = JSON.parse(localStorage.getItem('vault_data') || "[]");
+    cards = cards.filter(c => c.id != id);
+
+    localStorage.setItem('vault_data', JSON.stringify(cards));
+
+    updateDropdown();
+    handleSelection();
+}
+    function getCards() {
+    const data = localStorage.getItem('vault_data');
+    if (!data) return [];
+
+    const cards = JSON.parse(data);
+    const VEK = getVEK();
+
+    return cards.map(c => {
+        const decrypted = CryptoJS.AES.decrypt(c.secure, VEK)
+            .toString(CryptoJS.enc.Utf8);
+
+        const parsed = JSON.parse(decrypted);
+
+        return {
+            id: c.id,
+            nick: c.nick,
+            type: c.type,
+            ...parsed
+        };
+    });
+}
     function updateDropdown() { const s = document.getElementById('cardSelector'); const c = getCards().sort((a,b)=>a.nick.localeCompare(b.nick)); s.innerHTML = '<option value="">-- Choose Card --</option>' + c.map(x=>`<option value="${x.id}">${x.nick}</option>`).join(''); }
     function toggleSettings() { document.getElementById('settingsSection').classList.toggle('hidden'); ['cardSelector', 'cardDisplay', 'actionBtn'].forEach(id => document.getElementById(id).classList.toggle('hidden')); }
    function copy(t) {
