@@ -41,7 +41,7 @@
     
     <div id="unlockSection" style="width:100%">
         <input type="password" id="masterPass" placeholder="Master Password">
-        <button class="btn btn-green" onclick="unlockWithBiometric()">🔓 Unlock with Biometrics</button>
+        <button id="bioUnlockBtn" class="btn btn-green" onclick="unlockWithBiometric()">🔓 Unlock with Biometrics</button>
         <button class="btn btn-blue" onclick="unlockVault()">Unlock Vault</button>
         <button class="btn btn-ghost" onclick="document.getElementById('importFile').click()">📂 Import Backup</button>
         <input type="file" id="importFile" class="hidden" onchange="importData(this)">
@@ -122,6 +122,7 @@
 
 <script>
     let MASTER_KEY = "";
+    let SENSITIVE_UNLOCKED = false;
 
     // Input Formatters
     document.getElementById('num').addEventListener('input', e => {
@@ -170,6 +171,16 @@
             ['nick','num','name','exp','cvv'].forEach(k => document.getElementById(k).value = "");
         }
     }
+function updateBiometricUI() {
+    const bioBtn = document.getElementById("bioUnlockBtn");
+    const enabled = localStorage.getItem("vault_bio_enabled");
+
+    if (enabled === "true") {
+        bioBtn.classList.remove("hidden");
+    } else {
+        bioBtn.classList.add("hidden");
+    }
+}
 
     function saveCard() {
         const editId = document.getElementById('editId').value;
@@ -192,34 +203,50 @@
         actionBtn.innerText = "Edit " + card.nick;
         let theme = card.type.includes("Infinite") || card.type.includes("Elite") ? "card-infinite" : card.type.includes("Platinum") || card.type.includes("Signature") || card.type.includes("World") ? "card-platinum" : card.type.includes("Gold") ? "card-gold" : card.type.includes("RuPay") ? "card-rupay" : "";
         display.innerHTML = `
-            <div class="credit-card ${theme}">
-                <div class="card-header"><div class="card-chip"></div><div class="card-type-tag">${card.type}</div></div>
-                <div class="card-number" onclick="copy('${card.num}', 'Number Copied')">${card.num}</div>
-                <div class="card-footer">
-    <div>
-        <span class="label">Holder</span>
-        <span class="val" style="cursor:pointer;" 
-              onclick="copy('${card.name}', '')">
-            ${card.name}
-        </span>
+<div class="credit-card ${theme}">
+    <div class="card-header">
+        <div class="card-chip"></div>
+        <div class="card-type-tag">${card.type}</div>
     </div>
 
-    <div>
-        <span class="label">Exp</span>
-        <span class="val" style="cursor:pointer;" 
-              onclick="copy('${card.exp}', '')">
-            ${card.exp}
-        </span>
+    <div class="card-number" onclick="handleReveal(${card.id})">
+        ${SENSITIVE_UNLOCKED ? card.num : maskNumber(card.num)}
     </div>
 
-    <div>
-        <span class="label">CVV</span>
-        <span class="val" style="cursor:pointer;" 
-              onclick="copy('${card.cvv}', '')">
-            •••
-        </span>
+    <div class="card-footer">
+        <div>
+            <span class="label">Holder</span>
+            <span class="val">${card.name}</span>
+        </div>
+
+        <div>
+            <span class="label">Exp</span>
+            <span class="val">${card.exp}</span>
+        </div>
+
+        <div>
+            <span class="label">CVV</span>
+            <span class="val" onclick="handleReveal(${card.id})">
+                ${SENSITIVE_UNLOCKED ? card.cvv : '•••'}
+            </span>
+        </div>
     </div>
 </div>
+
+<div style="display:grid; grid-template-columns: 2.5fr 1fr; gap:10px; margin-top:5px;">
+    <button class="btn btn-ghost"
+        onclick="${SENSITIVE_UNLOCKED ? `copyFormatted(${card.id})` : `handleReveal(${card.id})`}"
+        style="font-size:0.75rem;">
+        📋 Copy Formatted
+    </button>
+
+    <button class="btn btn-danger"
+        onclick="deleteCard(${card.id})"
+        style="font-size:0.75rem;">
+        Delete
+    </button>
+</div>
+`;
 
             </div>
             <div style="display:grid; grid-template-columns: 2.5fr 1fr; gap:10px; margin-top:5px;">
@@ -234,6 +261,61 @@
     function toggleSettings() { document.getElementById('settingsSection').classList.toggle('hidden'); ['cardSelector', 'cardDisplay', 'actionBtn'].forEach(id => document.getElementById(id).classList.toggle('hidden')); }
    function copy(t) {
     navigator.clipboard.writeText(t);
+}
+function maskNumber(num) {
+    const clean = num.replace(/\s/g, '');
+    return "•••• •••• •••• " + clean.slice(-4);
+}
+
+async function handleReveal(cardId) {
+
+    const card = getCards().find(c => c.id == cardId);
+    if (!card) return;
+
+    const storedId = localStorage.getItem("vault_bio_id");
+    if (!storedId) {
+        alert("Biometric required to reveal details.");
+        return;
+    }
+
+    const challenge = randomChallenge();
+
+    const publicKey = {
+        challenge,
+        allowCredentials: [{
+            id: base64ToBuffer(storedId),
+            type: "public-key",
+            transports: ["internal"]
+        }],
+        userVerification: "required",
+        timeout: 60000
+    };
+
+    try {
+        await navigator.credentials.get({ publicKey });
+
+        SENSITIVE_UNLOCKED = true;
+        handleSelection();
+
+        setTimeout(() => {
+            SENSITIVE_UNLOCKED = false;
+            handleSelection();
+        }, 10000);
+
+    } catch {
+        alert("Verification failed.");
+    }
+}
+
+function copyFormatted(cardId) {
+    const card = getCards().find(c => c.id == cardId);
+    if (!card) return;
+
+    copy(`👤 Name: ${card.name}
+💳 Card: ${card.nick}
+🔢 Number: ${card.num}
+📅 Exp: ${card.exp}
+🔑 CVV: ${card.cvv}`);
 }
 
     function changePassword() {
@@ -303,11 +385,48 @@
     r.readAsText(i.files[0]);
 }
 
-function disableBiometric() {
-    localStorage.removeItem("vault_bio_id");
-    localStorage.removeItem("vault_bio_enabled");
-    alert("Biometrics disabled.");
+async function disableBiometric() {
+
+    const enabled = localStorage.getItem("vault_bio_enabled");
+    const storedId = localStorage.getItem("vault_bio_id");
+
+    if (!enabled || !storedId) {
+        alert("Biometrics already disabled.");
+        return;
+    }
+
+    const confirmDisable = confirm("Verify identity to disable biometrics?");
+    if (!confirmDisable) return;
+
+    const challenge = randomChallenge();
+
+    const publicKey = {
+        challenge,
+        allowCredentials: [{
+            id: base64ToBuffer(storedId),
+            type: "public-key",
+            transports: ["internal"]
+        }],
+        userVerification: "required",
+        timeout: 60000
+    };
+
+    try {
+        await navigator.credentials.get({ publicKey });
+
+        // 🔥 If biometric succeeds
+        localStorage.removeItem("vault_bio_id");
+        localStorage.removeItem("vault_bio_enabled");
+        localStorage.removeItem("vault_master_enc");
+        localStorage.removeItem("vault_device_key");
+
+        alert("Biometrics disabled securely.");
+
+    } catch (err) {
+        alert("Verification failed. Cannot disable biometrics.");
+    }
 }
+
     function showRecovery() { document.getElementById('unlockSection').classList.add('hidden'); document.getElementById('recoverySection').classList.remove('hidden'); }
     function handleRecovery() {
         const input = document.getElementById('rkInput').value.trim();
@@ -361,6 +480,13 @@ async function registerBiometric() {
         const credId = bufferToBase64(credential.rawId);
         localStorage.setItem("vault_bio_id", credId);
         localStorage.setItem("vault_bio_enabled", "true");
+      // Save encrypted master key
+const deviceKey = bufferToBase64(randomChallenge());
+localStorage.setItem("vault_device_key", deviceKey);
+
+const encryptedMaster = CryptoJS.AES.encrypt(MASTER_KEY, deviceKey).toString();
+localStorage.setItem("vault_master_enc", encryptedMaster);
+
         alert("Biometric enabled successfully!");
     } catch (err) {
         console.error(err);
@@ -395,16 +521,20 @@ async function unlockWithBiometric() {
     try {
         await navigator.credentials.get({ publicKey });
 
-        const pass = prompt("Enter Master Password:");
-        if (!pass) return;
+        // 🔥 Restore master key automatically
+        const deviceKey = localStorage.getItem("vault_device_key");
+        const encryptedMaster = localStorage.getItem("vault_master_enc");
 
-        if (CryptoJS.SHA256(pass).toString() !== localStorage.getItem('vault_hash')) {
-            alert("Incorrect password.");
+        const decryptedMaster = CryptoJS.AES.decrypt(encryptedMaster, deviceKey)
+            .toString(CryptoJS.enc.Utf8);
+
+        if (!decryptedMaster) {
+            alert("Failed to unlock vault.");
             return;
         }
 
-        MASTER_KEY = pass;
-
+        MASTER_KEY = decryptedMaster;
+        SENSITIVE_UNLOCKED = false;
         document.getElementById('unlockSection').classList.add('hidden');
         document.getElementById('mainContent').classList.remove('hidden');
         updateDropdown();
@@ -414,6 +544,7 @@ async function unlockWithBiometric() {
     }
 }
 
+updateBiometricUI();
 
 </script>
 </body>
