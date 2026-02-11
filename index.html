@@ -194,66 +194,73 @@ function updateBiometricUI() {
         document.getElementById('cardSelector').value = card.id; handleSelection();
     }
 
-    function handleSelection() {
-        const id = document.getElementById('cardSelector').value;
-        const display = document.getElementById('cardDisplay');
-        const actionBtn = document.getElementById('actionBtn');
-        if(!id) { display.innerHTML = ""; actionBtn.innerText = "+ Add New Card"; return; }
-        const card = getCards().find(c => c.id == id);
-        actionBtn.innerText = "Edit " + card.nick;
-        let theme = card.type.includes("Infinite") || card.type.includes("Elite") ? "card-infinite" : card.type.includes("Platinum") || card.type.includes("Signature") || card.type.includes("World") ? "card-platinum" : card.type.includes("Gold") ? "card-gold" : card.type.includes("RuPay") ? "card-rupay" : "";
-        display.innerHTML = `
-<div class="credit-card ${theme}">
-    <div class="card-header">
-        <div class="card-chip"></div>
-        <div class="card-type-tag">${card.type}</div>
-    </div>
+   function handleSelection() {
+    const id = document.getElementById('cardSelector').value;
+    const display = document.getElementById('cardDisplay');
+    const actionBtn = document.getElementById('actionBtn');
 
-    <div class="card-number" onclick="handleReveal(${card.id})">
-        ${SENSITIVE_UNLOCKED ? card.num : maskNumber(card.num)}
-    </div>
-
-    <div class="card-footer">
-        <div>
-            <span class="label">Holder</span>
-            <span class="val">${card.name}</span>
-        </div>
-
-        <div>
-            <span class="label">Exp</span>
-            <span class="val">${card.exp}</span>
-        </div>
-
-        <div>
-            <span class="label">CVV</span>
-            <span class="val" onclick="handleReveal(${card.id})">
-                ${SENSITIVE_UNLOCKED ? card.cvv : '•••'}
-            </span>
-        </div>
-    </div>
-</div>
-
-<div style="display:grid; grid-template-columns: 2.5fr 1fr; gap:10px; margin-top:5px;">
-    <button class="btn btn-ghost"
-        onclick="${SENSITIVE_UNLOCKED ? `copyFormatted(${card.id})` : `handleReveal(${card.id})`}"
-        style="font-size:0.75rem;">
-        📋 Copy Formatted
-    </button>
-
-    <button class="btn btn-danger"
-        onclick="deleteCard(${card.id})"
-        style="font-size:0.75rem;">
-        Delete
-    </button>
-</div>
-`;
-
-            </div>
-            <div style="display:grid; grid-template-columns: 2.5fr 1fr; gap:10px; margin-top:5px;">
-                <button class="btn btn-ghost" onclick="copy('👤 Name: ${card.name}\\n💳 Card: ${card.nick}\\n🔢 Number: ${card.num}\\n📅 Exp: ${card.exp}\\n🔑 CVV: ${card.cvv}', 'Details Copied')" style="font-size:0.75rem;">📋 Copy Formatted</button>
-                <button class="btn btn-danger" onclick="deleteCard(${card.id})" style="font-size:0.75rem;">Delete</button>
-            </div>`;
+    if (!id) {
+        display.innerHTML = "";
+        actionBtn.innerText = "+ Add New Card";
+        return;
     }
+
+    const card = getCards().find(c => c.id == id);
+    actionBtn.innerText = "Edit " + card.nick;
+
+    let theme =
+        card.type.includes("Infinite") || card.type.includes("Elite") ? "card-infinite" :
+        card.type.includes("Platinum") || card.type.includes("Signature") || card.type.includes("World") ? "card-platinum" :
+        card.type.includes("Gold") ? "card-gold" :
+        card.type.includes("RuPay") ? "card-rupay" : "";
+
+    display.innerHTML = `
+        <div class="credit-card ${theme}">
+            <div class="card-header">
+                <div class="card-chip"></div>
+                <div class="card-type-tag">${card.type}</div>
+            </div>
+
+            <div class="card-number" onclick="handleReveal(${card.id})">
+                ${SENSITIVE_UNLOCKED ? card.num : maskNumber(card.num)}
+            </div>
+
+            <div class="card-footer">
+                <div>
+                    <span class="label">Holder</span>
+                    <span class="val">${card.name}</span>
+                </div>
+
+                <div>
+                    <span class="label">Exp</span>
+                    <span class="val">${card.exp}</span>
+                </div>
+
+                <div>
+                    <span class="label">CVV</span>
+                    <span class="val" onclick="handleReveal(${card.id})">
+                        ${SENSITIVE_UNLOCKED ? card.cvv : '•••'}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 2.5fr 1fr; gap:10px; margin-top:5px;">
+            <button class="btn btn-ghost"
+                onclick="${SENSITIVE_UNLOCKED ? `copyFormatted(${card.id})` : `handleReveal(${card.id})`}"
+                style="font-size:0.75rem;">
+                📋 Copy Formatted
+            </button>
+
+            <button class="btn btn-danger"
+                onclick="deleteCard(${card.id})"
+                style="font-size:0.75rem;">
+                Delete
+            </button>
+        </div>
+    `;
+}
+
 
     function deleteCard(id) { if(confirm("Delete permanently?")) { let cards = getCards().filter(c => c.id != id); localStorage.setItem('vault_data', CryptoJS.AES.encrypt(JSON.stringify(cards), MASTER_KEY).toString()); updateDropdown(); handleSelection(); } }
     function getCards() { const d = localStorage.getItem('vault_data'); try { return d ? JSON.parse(CryptoJS.AES.decrypt(d, MASTER_KEY).toString(CryptoJS.enc.Utf8)) : []; } catch(e) { return []; } }
