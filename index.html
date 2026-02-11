@@ -232,7 +232,9 @@
     function getCards() { const d = localStorage.getItem('vault_data'); try { return d ? JSON.parse(CryptoJS.AES.decrypt(d, MASTER_KEY).toString(CryptoJS.enc.Utf8)) : []; } catch(e) { return []; } }
     function updateDropdown() { const s = document.getElementById('cardSelector'); const c = getCards().sort((a,b)=>a.nick.localeCompare(b.nick)); s.innerHTML = '<option value="">-- Choose Card --</option>' + c.map(x=>`<option value="${x.id}">${x.nick}</option>`).join(''); }
     function toggleSettings() { document.getElementById('settingsSection').classList.toggle('hidden'); ['cardSelector', 'cardDisplay', 'actionBtn'].forEach(id => document.getElementById(id).classList.toggle('hidden')); }
-    function copy(t, l) { navigator.clipboard.writeText(t); const toast = document.getElementById('toast'); toast.innerText = l; toast.style.opacity = '1'; setTimeout(() => toast.style.opacity = '0', 1200); }
+   function copy(t) {
+    navigator.clipboard.writeText(t);
+}
 
     function changePassword() {
         const curr = document.getElementById('settCurrPass').value;
