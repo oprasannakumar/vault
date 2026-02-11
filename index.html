@@ -42,7 +42,6 @@
     <div id="unlockSection" style="width:100%">
         <input type="password" id="masterPass" placeholder="Master Password">
         <button class="btn btn-green" onclick="unlockWithBiometric()">🔓 Unlock with Biometrics</button>
-        <button class="btn btn-ghost" onclick="registerBiometric()">➕ Enable Biometric</button>
         <button class="btn btn-blue" onclick="unlockVault()">Unlock Vault</button>
         <button class="btn btn-ghost" onclick="document.getElementById('importFile').click()">📂 Import Backup</button>
         <input type="file" id="importFile" class="hidden" onchange="importData(this)">
@@ -72,6 +71,10 @@
                 <button class="btn btn-ghost" onclick="copy(document.getElementById('rkVal').innerText, 'Key Copied!')" style="font-size: 0.7rem;">📋 Copy Key</button>
             </div>
             <button class="btn btn-green" onclick="generateAndSaveRK()" id="rkBtn">Generate Recovery Key</button>
+            <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
+            <button class="btn btn-green" onclick="registerBiometric()">🔐 Enable Biometrics</button>
+            <button class="btn btn-danger" onclick="disableBiometric()" style="margin-top:5px;">❌ Disable Biometrics</button>
+
             <button class="btn btn-ghost" onclick="toggleSettings()" style="margin-top: 15px;">Close Settings</button>
         </div>
 
