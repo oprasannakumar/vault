@@ -240,17 +240,46 @@
     }
 
     function importData(i) {
-        const r = new FileReader();
-        r.onload = (e) => {
+    const r = new FileReader();
+    r.onload = (e) => {
+        try {
             const j = JSON.parse(e.target.result);
+
+            const pass = prompt("Enter the password used for this backup:");
+            if (!pass) return;
+
+            if (CryptoJS.SHA256(pass).toString() !== j.hash) {
+                alert("Wrong password for this backup!");
+                return;
+            }
+
+            // TEST decryption BEFORE saving
+            const decrypted = CryptoJS.AES.decrypt(j.data, pass)
+                .toString(CryptoJS.enc.Utf8);
+
+            const parsed = JSON.parse(decrypted); // throws if invalid
+
+            // Save only after successful verification
             localStorage.setItem('vault_data', j.data);
             localStorage.setItem('vault_hash', j.hash);
             localStorage.setItem('vault_rk', j.rk);
-            alert("Import successful! Please log in.");
-            location.reload();
-        };
-        r.readAsText(i.files[0]);
-    }
+
+            MASTER_KEY = pass; // 🔥 THIS WAS MISSING
+
+            alert("Backup restored successfully!");
+
+            document.getElementById('unlockSection').classList.add('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+            updateDropdown();
+
+        } catch(err) {
+            alert("Backup file corrupted or incompatible.");
+            console.error(err);
+        }
+    };
+    r.readAsText(i.files[0]);
+}
+
 
     function showRecovery() { document.getElementById('unlockSection').classList.add('hidden'); document.getElementById('recoverySection').classList.remove('hidden'); }
     function handleRecovery() {
