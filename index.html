@@ -196,10 +196,31 @@
                 <div class="card-header"><div class="card-chip"></div><div class="card-type-tag">${card.type}</div></div>
                 <div class="card-number" onclick="copy('${card.num}', 'Number Copied')">${card.num}</div>
                 <div class="card-footer">
-                    <div><span class="label">Holder</span><span class="val">${card.name}</span></div>
-                    <div><span class="label">Exp</span><span class="val">${card.exp}</span></div>
-                    <div><span class="label">CVV</span><span class="val">***</span></div>
-                </div>
+    <div>
+        <span class="label">Holder</span>
+        <span class="val" style="cursor:pointer;" 
+              onclick="copy('${card.name}', '')">
+            ${card.name}
+        </span>
+    </div>
+
+    <div>
+        <span class="label">Exp</span>
+        <span class="val" style="cursor:pointer;" 
+              onclick="copy('${card.exp}', '')">
+            ${card.exp}
+        </span>
+    </div>
+
+    <div>
+        <span class="label">CVV</span>
+        <span class="val" style="cursor:pointer;" 
+              onclick="copy('${card.cvv}', '')">
+            •••
+        </span>
+    </div>
+</div>
+
             </div>
             <div style="display:grid; grid-template-columns: 2.5fr 1fr; gap:10px; margin-top:5px;">
                 <button class="btn btn-ghost" onclick="copy('👤 Name: ${card.name}\\n💳 Card: ${card.nick}\\n🔢 Number: ${card.num}\\n📅 Exp: ${card.exp}\\n🔑 CVV: ${card.cvv}', 'Details Copied')" style="font-size:0.75rem;">📋 Copy Formatted</button>
