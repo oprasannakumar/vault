@@ -65,6 +65,7 @@
             <input type="password" id="settCurrPass" placeholder="Current Password">
             <input type="password" id="settNewPass" placeholder="New Password">
             <button class="btn btn-blue" onclick="changePassword()">Change Password</button>
+            <button class="btn btn-blue" onclick="setVaultPIN()">Set / Change Vault PIN</button>
             <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
             <div id="rkBox" class="hidden">
                 <div class="rk-display" id="rkVal"></div>
@@ -121,238 +122,399 @@
 </div>
 
 <script>
-let MASTER_KEY = "";
-let SENSITIVE_UNLOCKED = false;
+    let MASTER_KEY = "";
+    let autoLockTimer;
+    // Input Formatters
+    document.getElementById('num').addEventListener('input', e => {
+        let v = e.target.value.replace(/\D/g, '').match(/.{1,4}/g);
+        e.target.value = v ? v.join(' ') : '';
+    });
+    document.getElementById('exp').addEventListener('input', e => {
+        let v = e.target.value.replace(/\D/g, '');
+        if (v.length >= 2) {
+            let m = parseInt(v.substring(0, 2));
+            if (m > 12) v = '12' + v.substring(2);
+            if (m === 0) v = '01' + v.substring(2);
+        }
+        e.target.value = v.length > 2 ? v.substring(0, 2) + '/' + v.substring(2, 4) : v;
+    });
 
-/* =========================
-   CRYPTO CORE
-========================= */
+    if(localStorage.getItem('vault_hash')) document.getElementById('forgotLink').classList.remove('hidden');
 
-function deriveKey(password, salt) {
-    return CryptoJS.PBKDF2(password, salt, {
-        keySize: 256 / 32,
-        iterations: 150000
-    }).toString();
-}
-
-function getVEK() {
-    const enc = localStorage.getItem("vault_vek_enc");
-    if (!enc || !MASTER_KEY) return null;
-
-    return CryptoJS.AES.decrypt(enc, MASTER_KEY)
-        .toString(CryptoJS.enc.Utf8);
-}
-
-/* =========================
-   VAULT SETUP / LOGIN
-========================= */
-
-function unlockVault() {
-
-    const pass = document.getElementById('masterPass').value;
-    if (!pass) return alert("Enter password");
-
-    const storedHash = localStorage.getItem("vault_hash");
-
-    if (!storedHash) {
-        // FIRST TIME SETUP
-        const salt = CryptoJS.lib.WordArray.random(16).toString();
-        localStorage.setItem("vault_salt", salt);
-
-        const derived = deriveKey(pass, salt);
-        localStorage.setItem("vault_hash", CryptoJS.SHA256(derived).toString());
-        MASTER_KEY = derived;
-
-        const VEK = CryptoJS.lib.WordArray.random(32).toString();
-        localStorage.setItem("vault_vek_enc",
-            CryptoJS.AES.encrypt(VEK, MASTER_KEY).toString()
-        );
-
-        localStorage.setItem("vault_data", JSON.stringify([]));
-        alert("Vault created securely.");
-    } else {
-        const salt = localStorage.getItem("vault_salt");
-        const derived = deriveKey(pass, salt);
-
-        if (CryptoJS.SHA256(derived).toString() !== storedHash)
-            return alert("Wrong password");
-
-        MASTER_KEY = derived;
+    function unlockVault() {
+        const pass = document.getElementById('masterPass').value;
+        const storedHash = localStorage.getItem('vault_hash');
+        if (!storedHash) {
+            MASTER_KEY = pass;
+            localStorage.setItem('vault_hash', CryptoJS.SHA256(pass).toString());
+            alert("Vault created! Visit Settings to generate your Recovery Key.");
+        } else {
+            if (CryptoJS.SHA256(pass).toString() !== storedHash) return alert("Wrong password!");
+            MASTER_KEY = pass;
+        }
+        document.getElementById('unlockSection').classList.add('hidden');
+        document.getElementById('mainContent').classList.remove('hidden');
+        updateDropdown();
     }
 
-    document.getElementById("unlockSection").classList.add("hidden");
-    document.getElementById("mainContent").classList.remove("hidden");
-    updateDropdown();
+    function handleMainAction() { toggleAddForm(!!document.getElementById('cardSelector').value); }
+
+    function toggleAddForm(isEdit = false) { 
+        const form = document.getElementById('addForm'); 
+        if (form.classList.toggle('hidden')) return; 
+        if (isEdit) {
+            const c = getCards().find(x => x.id == document.getElementById('cardSelector').value);
+            document.getElementById('editId').value = c.id;
+            ['nick','type','num','name','exp','cvv'].forEach(k => document.getElementById(k).value = c[k]);
+        } else {
+            document.getElementById('editId').value = "";
+            ['nick','num','name','exp','cvv'].forEach(k => document.getElementById(k).value = "");
+        }
+    }
+function updateBiometricUI() {
+    const bioBtn = document.getElementById("bioUnlockBtn");
+    const enabled = localStorage.getItem("vault_bio_enabled");
+
+    if (enabled === "true") {
+        bioBtn.classList.remove("hidden");
+    } else {
+        bioBtn.classList.add("hidden");
+    }
 }
 
-/* =========================
-   CARD STORAGE
-========================= */
+    function saveCard() {
+        const editId = document.getElementById('editId').value;
+        const card = { id: editId ? parseInt(editId) : Date.now(), nick: document.getElementById('nick').value, type: document.getElementById('type').value, num: document.getElementById('num').value, name: document.getElementById('name').value, exp: document.getElementById('exp').value, cvv: document.getElementById('cvv').value };
+        if(!card.nick || !card.num || card.exp.length < 5) return alert("Fill all info correctly!");
+        let cards = getCards();
+        if (editId) cards[cards.findIndex(c => c.id == editId)] = card;
+        else cards.push(card);
+        localStorage.setItem('vault_data', CryptoJS.AES.encrypt(JSON.stringify(cards), MASTER_KEY).toString());
+        toggleAddForm(); updateDropdown();
+        document.getElementById('cardSelector').value = card.id; handleSelection();
+    }
 
-function saveCard() {
+    function handleSelection() {
+        const id = document.getElementById('cardSelector').value;
+        const display = document.getElementById('cardDisplay');
+        const actionBtn = document.getElementById('actionBtn');
+        if(!id) { display.innerHTML = ""; actionBtn.innerText = "+ Add New Card"; return; }
+        const card = getCards().find(c => c.id == id);
+        actionBtn.innerText = "Edit " + card.nick;
+        let theme = card.type.includes("Infinite") || card.type.includes("Elite") ? "card-infinite" : card.type.includes("Platinum") || card.type.includes("Signature") || card.type.includes("World") ? "card-platinum" : card.type.includes("Gold") ? "card-gold" : card.type.includes("RuPay") ? "card-rupay" : "";
+        display.innerHTML = `
+            <div class="credit-card ${theme}">
+                <div class="card-header"><div class="card-chip"></div><div class="card-type-tag">${card.type}</div></div>
+                <div class="card-number" onclick="copy('${card.num}', 'Number Copied')">${card.num}</div>
+                <div class="card-footer">
+    <div>
+        <span class="label">Holder</span>
+        <span class="val" style="cursor:pointer;" 
+              onclick="copy('${card.name}', '')">
+            ${card.name}
+        </span>
+    </div>
 
-    const VEK = getVEK();
-    if (!VEK) return alert("Vault not unlocked");
+    <div>
+        <span class="label">Exp</span>
+        <span class="val" style="cursor:pointer;" 
+              onclick="copy('${card.exp}', '')">
+            ${card.exp}
+        </span>
+    </div>
 
-    const cardData = {
-        num: document.getElementById('num').value,
-        name: document.getElementById('name').value,
-        exp: document.getElementById('exp').value,
-        cvv: document.getElementById('cvv').value
-    };
+    <div>
+        <span class="label">CVV</span>
+        <span class="val" style="cursor:pointer;" 
+              onclick="copy('${card.cvv}', '')">
+            •••
+        </span>
+    </div>
+</div>
 
-    if (!cardData.num || cardData.exp.length < 5)
-        return alert("Fill details properly");
+            </div>
+            <div style="display:grid; grid-template-columns: 2.5fr 1fr; gap:10px; margin-top:5px;">
+                <button class="btn btn-ghost" onclick="copy('👤 Name: ${card.name}\\n💳 Card: ${card.nick}\\n🔢 Number: ${card.num}\\n📅 Exp: ${card.exp}\\n🔑 CVV: ${card.cvv}', 'Details Copied')" style="font-size:0.75rem;">📋 Copy Formatted</button>
+                <button class="btn btn-danger" onclick="deleteCard(${card.id})" style="font-size:0.75rem;">Delete</button>
+            </div>`;
+    }
 
-    const secureCard = {
-        id: Date.now(),
-        nick: document.getElementById('nick').value,
-        type: document.getElementById('type').value,
-        secure: CryptoJS.AES.encrypt(
-            JSON.stringify(cardData),
-            VEK
-        ).toString()
-    };
-
-    const cards = JSON.parse(localStorage.getItem("vault_data") || "[]");
-    cards.push(secureCard);
-    localStorage.setItem("vault_data", JSON.stringify(cards));
-
-    alert("Card saved");
-    updateDropdown();
+    function deleteCard(id) { if(confirm("Delete permanently?")) { let cards = getCards().filter(c => c.id != id); localStorage.setItem('vault_data', CryptoJS.AES.encrypt(JSON.stringify(cards), MASTER_KEY).toString()); updateDropdown(); handleSelection(); } }
+    function getCards() { const d = localStorage.getItem('vault_data'); try { return d ? JSON.parse(CryptoJS.AES.decrypt(d, MASTER_KEY).toString(CryptoJS.enc.Utf8)) : []; } catch(e) { return []; } }
+    function updateDropdown() { const s = document.getElementById('cardSelector'); const c = getCards().sort((a,b)=>a.nick.localeCompare(b.nick)); s.innerHTML = '<option value="">-- Choose Card --</option>' + c.map(x=>`<option value="${x.id}">${x.nick}</option>`).join(''); }
+    function toggleSettings() { document.getElementById('settingsSection').classList.toggle('hidden'); ['cardSelector', 'cardDisplay', 'actionBtn'].forEach(id => document.getElementById(id).classList.toggle('hidden')); }
+   function copy(t) {
+    navigator.clipboard.writeText(t);
 }
 
-function getCards() {
+    function changePassword() {
+        const curr = document.getElementById('settCurrPass').value;
+        const next = document.getElementById('settNewPass').value;
+        if (CryptoJS.SHA256(curr).toString() !== localStorage.getItem('vault_hash')) return alert("Current password incorrect!");
+        const cards = getCards();
+        localStorage.setItem('vault_data', CryptoJS.AES.encrypt(JSON.stringify(cards), next).toString());
+        localStorage.setItem('vault_hash', CryptoJS.SHA256(next).toString());
+        alert("Password updated!"); location.reload();
+    }
+    function setVaultPIN() {
+    const curr = document.getElementById('settCurrPass').value;
 
-    const raw = localStorage.getItem("vault_data");
-    if (!raw) return [];
+    if (CryptoJS.SHA256(curr).toString() !== localStorage.getItem('vault_hash')) {
+        alert("Enter correct current password first!");
+        return;
+    }
 
-    const VEK = getVEK();
-    if (!VEK) return [];
+    const pin = prompt("Set 4-digit Vault PIN:");
+    if (!pin || !/^\d{4}$/.test(pin)) {
+        alert("PIN must be exactly 4 digits.");
+        return;
+    }
 
-    return JSON.parse(raw).map(c => {
+    localStorage.setItem("vault_2fa_pin", CryptoJS.SHA256(pin).toString());
+    alert("Vault PIN saved successfully!");
+}
+
+    function generateAndSaveRK() {
+        const curr = document.getElementById('settCurrPass').value;
+        if (CryptoJS.SHA256(curr).toString() !== localStorage.getItem('vault_hash')) return alert("Enter current password above first!");
+        let r = ""; const c = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        for(let i=0; i<16; i++) { if(i>0 && i%4===0) r+="-"; r+=c.charAt(Math.floor(Math.random()*c.length)); }
+        localStorage.setItem('vault_rk', CryptoJS.SHA256(r).toString());
+        document.getElementById('rkVal').innerText = r;
+        document.getElementById('rkBox').classList.remove('hidden');
+        alert("Recovery Key Generated!");
+    }
+
+    function exportData() {
+        const blob = new Blob([JSON.stringify({data:localStorage.getItem('vault_data'), hash:localStorage.getItem('vault_hash'), rk:localStorage.getItem('vault_rk')})], {type:"text/plain"});
+        const a = document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="vault_backup.txt"; a.click();
+    }
+
+    function importData(i) {
+    const r = new FileReader();
+    r.onload = (e) => {
         try {
-            const decrypted = CryptoJS.AES.decrypt(c.secure, VEK)
+            const j = JSON.parse(e.target.result);
+
+            const pass = prompt("Enter the password used for this backup:");
+            if (!pass) return;
+
+            if (CryptoJS.SHA256(pass).toString() !== j.hash) {
+                alert("Wrong password for this backup!");
+                return;
+            }
+
+            // TEST decryption BEFORE saving
+            const decrypted = CryptoJS.AES.decrypt(j.data, pass)
                 .toString(CryptoJS.enc.Utf8);
 
-            return {
-                id: c.id,
-                nick: c.nick,
-                type: c.type,
-                ...JSON.parse(decrypted)
-            };
-        } catch {
-            return null;
-        }
-    }).filter(Boolean);
-}
+            const parsed = JSON.parse(decrypted); // throws if invalid
 
-function deleteCard(id) {
-    let cards = JSON.parse(localStorage.getItem("vault_data") || "[]");
-    cards = cards.filter(c => c.id !== id);
-    localStorage.setItem("vault_data", JSON.stringify(cards));
-    updateDropdown();
-}
+            // Save only after successful verification
+            localStorage.setItem('vault_data', j.data);
+            localStorage.setItem('vault_hash', j.hash);
+            localStorage.setItem('vault_rk', j.rk);
 
-/* =========================
-   BACKUP SYSTEM
-========================= */
+            MASTER_KEY = pass; // 🔥 THIS WAS MISSING
 
-function exportData() {
+            alert("Backup restored successfully!");
 
-    const backup = {
-        version: 2,
-        vault_data: localStorage.getItem("vault_data"),
-        vault_hash: localStorage.getItem("vault_hash"),
-        vault_salt: localStorage.getItem("vault_salt"),
-        vault_vek_enc: localStorage.getItem("vault_vek_enc")
-    };
+            document.getElementById('unlockSection').classList.add('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+            updateDropdown();
 
-    const blob = new Blob(
-        [JSON.stringify(backup)],
-        { type: "application/json" }
-    );
-
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "vault_backup.json";
-    a.click();
-}
-
-function importData(input) {
-
-    const reader = new FileReader();
-
-    reader.onload = e => {
-        try {
-            const backup = JSON.parse(e.target.result);
-
-            if (backup.version !== 2)
-                return alert("Unsupported backup format");
-
-            localStorage.setItem("vault_data", backup.vault_data);
-            localStorage.setItem("vault_hash", backup.vault_hash);
-            localStorage.setItem("vault_salt", backup.vault_salt);
-            localStorage.setItem("vault_vek_enc", backup.vault_vek_enc);
-
-            alert("Backup restored. Login again.");
-            location.reload();
-
-        } catch {
-            alert("Invalid backup file");
+        } catch(err) {
+            alert("Backup file corrupted or incompatible.");
+            console.error(err);
         }
     };
-
-    reader.readAsText(input.files[0]);
+    r.readAsText(i.files[0]);
+}
+function resetAutoLock() {
+    clearTimeout(autoLockTimer);
+    autoLockTimer = setTimeout(() => {
+        alert("Vault auto-locked.");
+        location.reload();
+    }, 60000); // 60 seconds
 }
 
-/* =========================
-   PASSWORD CHANGE
-========================= */
+document.addEventListener("click", resetAutoLock);
+document.addEventListener("keydown", resetAutoLock);
 
-function changePassword() {
+async function disableBiometric() {
 
-    const curr = document.getElementById('settCurrPass').value;
-    const next = document.getElementById('settNewPass').value;
+    const enabled = localStorage.getItem("vault_bio_enabled");
+    const storedId = localStorage.getItem("vault_bio_id");
 
-    const salt = localStorage.getItem("vault_salt");
-    const derivedCurr = deriveKey(curr, salt);
+    if (!enabled || !storedId) {
+        alert("Biometrics already disabled.");
+        return;
+    }
 
-    if (CryptoJS.SHA256(derivedCurr).toString() !== localStorage.getItem("vault_hash"))
-        return alert("Current password incorrect");
+    const confirmDisable = confirm("Verify identity to disable biometrics?");
+    if (!confirmDisable) return;
 
-    const VEK = CryptoJS.AES.decrypt(
-        localStorage.getItem("vault_vek_enc"),
-        derivedCurr
-    ).toString(CryptoJS.enc.Utf8);
+    const challenge = randomChallenge();
 
-    const newSalt = CryptoJS.lib.WordArray.random(16).toString();
-    const derivedNext = deriveKey(next, newSalt);
+    const publicKey = {
+        challenge,
+        allowCredentials: [{
+            id: base64ToBuffer(storedId),
+            type: "public-key",
+            transports: ["internal"]
+        }],
+        userVerification: "required",
+        timeout: 60000
+    };
 
-    localStorage.setItem("vault_salt", newSalt);
-    localStorage.setItem("vault_hash", CryptoJS.SHA256(derivedNext).toString());
-    localStorage.setItem("vault_vek_enc",
-        CryptoJS.AES.encrypt(VEK, derivedNext).toString()
-    );
+    try {
+        await navigator.credentials.get({ publicKey });
 
-    alert("Password updated securely");
-    location.reload();
+        // 🔥 If biometric succeeds
+        localStorage.removeItem("vault_bio_id");
+        localStorage.removeItem("vault_bio_enabled");
+        localStorage.removeItem("vault_master_enc");
+        localStorage.removeItem("vault_device_key");
+
+        alert("Biometrics disabled securely.");
+
+    } catch (err) {
+        alert("Verification failed. Cannot disable biometrics.");
+    }
 }
 
-/* =========================
-   UI HELPERS
-========================= */
-
-function updateDropdown() {
-    const s = document.getElementById("cardSelector");
-    const cards = getCards();
-    s.innerHTML = '<option value="">-- Choose Card --</option>' +
-        cards.map(c =>
-            `<option value="${c.id}">${c.nick}</option>`
-        ).join("");
+    function showRecovery() { document.getElementById('unlockSection').classList.add('hidden'); document.getElementById('recoverySection').classList.remove('hidden'); }
+    function handleRecovery() {
+        const input = document.getElementById('rkInput').value.trim();
+        if (CryptoJS.SHA256(input).toString() !== localStorage.getItem('vault_rk')) return alert("Invalid Recovery Key!");
+        const next = prompt("Enter New Master Password:");
+        if (next && next.length >= 4) { localStorage.setItem('vault_hash', CryptoJS.SHA256(next).toString()); location.reload(); }
+    }
+    // ===== WebAuthn Helpers =====
+function bufferToBase64(buffer) {
+    return btoa(String.fromCharCode(...new Uint8Array(buffer)));
 }
+
+function base64ToBuffer(base64) {
+    return Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+}
+
+function randomChallenge() {
+    return Uint8Array.from(window.crypto.getRandomValues(new Uint8Array(32)));
+}
+
+// ===== Register Biometric =====
+async function registerBiometric() {
+
+    if (!window.PublicKeyCredential) {
+        alert("WebAuthn not supported on this device.");
+        return;
+    }
+
+    const challenge = randomChallenge();
+
+    const publicKey = {
+        challenge: challenge,
+        rp: { name: "Secure Card Vault" },
+        user: {
+            id: randomChallenge(),
+            name: "vault-user",
+            displayName: "Vault User"
+        },
+        pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+        authenticatorSelection: {
+            authenticatorAttachment: "platform",
+            userVerification: "required",
+            residentKey: "required"
+        },
+        timeout: 60000,
+        attestation: "none"
+    };
+
+    try {
+        const credential = await navigator.credentials.create({ publicKey });
+
+        const credId = bufferToBase64(credential.rawId);
+        localStorage.setItem("vault_bio_id", credId);
+        localStorage.setItem("vault_bio_enabled", "true");
+      // Save encrypted master key
+const deviceKey = bufferToBase64(randomChallenge());
+localStorage.setItem("vault_device_key", deviceKey);
+
+const encryptedMaster = CryptoJS.AES.encrypt(MASTER_KEY, deviceKey).toString();
+localStorage.setItem("vault_master_enc", encryptedMaster);
+
+        alert("Biometric enabled successfully!");
+    } catch (err) {
+        console.error(err);
+        alert("Biometric registration failed.");
+    }
+}
+
+// ===== Unlock With Biometrics =====
+async function unlockWithBiometric() {
+
+    const enabled = localStorage.getItem("vault_bio_enabled");
+    const storedId = localStorage.getItem("vault_bio_id");
+
+    if (!enabled || !storedId) {
+        alert("Biometrics not enabled.");
+        return;
+    }
+
+    const challenge = randomChallenge();
+
+    const publicKey = {
+        challenge,
+        allowCredentials: [{
+            id: base64ToBuffer(storedId),
+            type: "public-key",
+            transports: ["internal"]
+        }],
+        userVerification: "required",
+        timeout: 60000
+    };
+
+    try {
+        await navigator.credentials.get({ publicKey });
+
+        // 🔥 Restore master key automatically
+        const deviceKey = localStorage.getItem("vault_device_key");
+        const encryptedMaster = localStorage.getItem("vault_master_enc");
+
+        const decryptedMaster = CryptoJS.AES.decrypt(encryptedMaster, deviceKey)
+            .toString(CryptoJS.enc.Utf8);
+
+        if (!decryptedMaster) {
+            alert("Failed to unlock vault.");
+            return;
+        }
+          // 🔐 Ask for Vault PIN after biometric
+const storedPinHash = localStorage.getItem("vault_2fa_pin");
+
+if (storedPinHash) {
+    const enteredPin = prompt("Enter your 4-digit Vault PIN:");
+
+    if (!enteredPin || CryptoJS.SHA256(enteredPin).toString() !== storedPinHash) {
+        alert("Vault PIN incorrect.");
+        return;
+    }
+}
+
+MASTER_KEY = decryptedMaster;
+
+document.getElementById('unlockSection').classList.add('hidden');
+document.getElementById('mainContent').classList.remove('hidden');
+updateDropdown();
+
+    } catch (err) {
+        alert("Biometric verification failed.");
+    }
+}
+
+updateBiometricUI();
+
 </script>
-
 </body>
 </html>
   
